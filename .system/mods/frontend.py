@@ -25,9 +25,9 @@ exists=os.path.exists
 def isfile(s): return os.path.exists(s) and not os.path.isdir(s)
 osx=not isfile('/proc/cpuinfo')
 
-#########################
-### Parse arguments  ####
-#########################
+########################
+### Parse arguments ####
+########################
 
 import dirs,utils,error
 rel_blddir=os.path.relpath(dirs.blddir)
@@ -96,8 +96,7 @@ def parse_args():
                              help='Enable packages in selected projects (under packages/ '
                              ' or folders defined by the DGCODE_PKG_PATH environment variable).'
                              ' The selection can use wildcards and comma separation. The special'
-                             ' project names "ex" and "val" can be used to enable Examples/'
-                             ' and Validation/.')
+                             ' project name "val" can be used to enable Validation/')
 #    group_pkgselect.add_option("-k","--pkg",
 #                             action='store', dest="pkgs", default='',metavar='PKG',
 #                             help='Enable these packages in addition to those selected by'
@@ -219,9 +218,6 @@ def parse_args():
         #    parser.error('Do not set NOT=... variable when supplying --project flag')
         projs = set(e.lower() for e in opt.project.split(','))
         extra='Framework/*,'
-        if 'ex' in projs:
-            projs=[a for a in projs if a.lower() != 'ex']
-            extra+='Examples/*,'
         if 'val' in projs:
             projs=[a for a in projs if a.lower() != 'val']
             extra+='Validation/*,'
@@ -248,7 +244,7 @@ def parse_args():
         for a in args_unused:
             qp=os.path.abspath(os.path.realpath(a))
             if not any([qp.startswith(d) for d in codedirs_abs]):
-                parser.error("grep/find/replace/... can only work on directories below %s"%codedirs_abs)
+                parser.error("grep/find/replace/... can only work on directories below %s"%codedirs_abs) #TODO ' '.join(codedirs_abs) might look nicer
             gps=[d for d in glob.glob(qp) if os.path.isdir(d)]
             if not gps:
                 parser.error("no directory matches for '%s'"%a)
@@ -392,27 +388,38 @@ if opt.show:
     sys.exit(0)
 
 def create_filter(pattern):
-    #Patterns separated with ; or ,.
-    #
-    #A '/' char indicates a pattern to be tested versus the path to the package,
-    #otherwise it will be a test just against the package name.
-    #
-    #matching is done case-insensitively via the fnmatch module
+  #Patterns separated with ; or ,.
 
-    parts=pattern.replace(';',',').split(',')
-    import fnmatch,re
-    dirparts = [re.compile(fnmatch.translate(p.lower())).match for p in parts if p and '/' in p]
-    nameparts= [re.compile(fnmatch.translate(p.lower())).match for p in parts if p and not '/' in p]
-    def the_filter(pkgname,reldir,reldir_withparent):
-        for p in nameparts:
-            if p(pkgname.lower()): return True
-        for d in dirparts:
-            if d(reldir.lower()): return True
-        for p in nameparts:
-            for folder in reldir_withparent.lower().split(os.sep):
-                if p(folder): return True            
-        return False
-    return the_filter
+  from pathlib import Path 
+
+  enabled_dirs = []
+  for part in [p.lower() for p in pattern.replace(';',',').split(',')]:
+    if part == 'framework/*': #all framework directories
+      enabled_dirs.append(dirs.fmwkdir)
+    elif part == 'val': #all validation directories
+      enabled_dirs.append(dirs.valdir)
+    elif part.startswith('framework::'): #specific framework directory
+      enabled_dirs.extend( Path(dirs.fmwkdir).glob('**/%s/'%part.split('::')[1]) ) 
+    elif Path(part).is_absolute(): #any absolute path
+      enabled_dirs.append(part)
+    elif part in [Path(dir).name.lower() for dir in dirs.extpkgdirs]: #external package directories (project dir or pkg dirs) by name 
+      enabled_dirs.extend([dir for dir in dirs.extpkgdirs if Path(dir).name.lower() == part])
+    else: #subdirectory under the external pkg directories (project dir or pkg dirs)
+      extdirs = []
+      for extpkgdir in [p.lower() for p in dirs.extpkgdirs]:
+          extdirs.extend(Path(extpkgdir).glob('**/%s/'%part)) 
+      if extdirs:
+        enabled_dirs.extend(extdirs)
+      else:
+        print('ERROR: unable to resolve: %s'%part)
+    
+  def the_filter(pkg):
+    for d in enabled_dirs:
+      if(Path(pkg.lower()).is_relative_to(str(d).lower())):
+        return True
+    return False
+
+  return the_filter
 
 select_filter=create_filter(cfgvars['ONLY']) if 'ONLY' in cfgvars else None
 exclude_filter=create_filter(cfgvars['NOT']) if 'NOT' in cfgvars else None
@@ -703,9 +710,9 @@ if opt.runtests:
         sys.exit(1 if ec > 128 else ec)
 
 if opt.install:
-    print('\n\n************ DEBUG ************')
-    print('. %s/setup.sh && dginstall -q "%s"'%(dirs.installdir,opt.install))
-    print('************ DEBUG ************\n\n')
+    #print('\n\n************ DEBUG ************')# Milan
+    #print('. %s/setup.sh && dginstall -q "%s"'%(dirs.installdir,opt.install))
+    #print('************ DEBUG ************\n\n')
     ec=utils.system('. %s/setup.sh && dginstall -q "%s"'%(dirs.installdir,opt.install))
     if ec:
         sys.exit(1 if ec > 128 else ec)

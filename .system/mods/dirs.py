@@ -5,18 +5,21 @@ import conf#project specific configuration
 
 #system dir is one up from the modules dir:
 sysdir = path.realpath(join(path.dirname(__file__),'..'))
-#blddir = path.realpath(conf.build_dir(sysdir))
+fmwkdir = conf.framework_dir(sysdir)
+#print('fmwkdir', fmwkdir, '\n')
+valdir = conf.validation_dir(sysdir)
+#print('valdir', valdir, '\n')
 blddir = conf.build_dir()
-print('blddir', blddir, '\n')
+#print('blddir', blddir, '\n')
 makefiledir=join(blddir,'makefiles')
+extpkgdirs = conf.ext_package_dirs()
+#print('extpkgdirs', extpkgdirs, '\n')
 codedirs = conf.code_dirs(sysdir)
-print('codedirs', codedirs, '\n')
-#installdir = path.realpath(conf.install_dir(sysdir))
+#print('codedirs', codedirs, '\n')
 installdir = conf.install_dir()
-print('installdir', installdir, '\n')
-#testdir = path.realpath(conf.test_dir(sysdir))
+#print('installdir', installdir, '\n')
 testdir = conf.test_dir()
-print('testdir', testdir, '\n')
+#print('testdir', testdir, '\n')
 cmakedetectdir = join(sysdir,'cmakedetect')
 incdirname='include'
 libdirname='libs'

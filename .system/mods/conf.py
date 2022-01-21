@@ -72,12 +72,16 @@ def project_dir():
     raise SystemExit('ERROR: The DGCODE_PROJECT_DIR environment variable must hold an absolute path.')
   return proj_dir_real
 
+def ext_package_dirs():
+  dirs = [project_dir()]
+  pkg_path_env = os.environ.get('DGCODE_PKG_PATH', None)
+  if(pkg_path_env):
+    dirs.extend([os.path.realpath(p.strip()) for p in pkg_path_env.split(':') if p.strip()])
+  return dirs
+
 def code_dirs(system_dir):   
-    dirs = [os.path.realpath(join(system_dir,'../packages'))] #this might change
-    dirs.extend([project_dir()])
-    pkg_path_env = os.environ.get('DGCODE_PKG_PATH', None)
-    if(pkg_path_env):
-      dirs.extend([os.path.realpath(p.strip()) for p in pkg_path_env.split(':') if p.strip()])
+    dirs = ext_package_dirs()
+    dirs.append(os.path.realpath(join(system_dir,'../packages'))) #this might change
     return dirs
 
 def build_dir():
@@ -96,6 +100,12 @@ def install_dir():
 
 def test_dir():
     return join(build_dir(),'testresults/')
+
+def framework_dir(system_dir):
+  return os.path.realpath(join(system_dir,'../packages/Framework'))
+
+def validation_dir(system_dir):
+  return os.path.realpath(join(system_dir,'../packages/Validation'))
 
 def target_factories_for_patterns():
     import tfact_symlink as tfs

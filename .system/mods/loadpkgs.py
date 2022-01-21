@@ -98,7 +98,7 @@ class Package:
         self.dirname = dirname
         self.__haslib=None
         self.reldirname = os.path.relpath(dirname,basedir)
-        self.reldirnamewithparent = os.path.relpath(dirname,basedir+'/..')
+        #self.reldirnamewithparent = os.path.relpath(dirname,basedir+'/..')
         self.name = os.path.basename(dirname)
         assert isinstance(self.name,str)
         assert isinstance(self.dirname,str)
@@ -314,7 +314,7 @@ class PackageLoader:
         Locates package directories and inits wrapper Package objects for each.
         It will respect select_pkg_filter or exclude_pkg_filter and attempt to be
         economical about loading the package configuration files. Filters will
-        receive package reldirname and basename as input.'
+        receive package reldirname and basename as input.' #FIXME Milan
         """
         #use load_all to (inefficiently) load all cfg info even when select filter is set (to produce pkg graphs)
 
@@ -333,8 +333,8 @@ class PackageLoader:
         pkgdirs={}
         for basedir in basedirs:
           dirs = find_pkg_dirs(basedir)
-          print('basedir:',basedir)
-          print('dirs: ', dirs)
+          #print('basedir:',basedir)
+          #print('dirs: ', dirs)
           if not dirs:
             error.error("No packages found in %s!"%basedir)
           pkgdirs.update({dir:basedir for dir in dirs})
@@ -347,12 +347,7 @@ class PackageLoader:
         lowercased_pkgs=set()
         pkgs=[]
         for pd,basedir in pkgdirs.items():
-            #TODO if full path+pkg name already added, then continue
             p=Package(pd,basedir,default_enabled)
-            print('basedir', basedir)
-            print(pd)
-            print(p.dirname)
-            print(p.name)
             pkgs+=[p]
             ln=p.name.lower()
             if p.name in n2p:
@@ -373,9 +368,7 @@ class PackageLoader:
             return g(pn,None)
         if select_pkg_filter:
             for p in pkgs:
-                #print('* ',p.name ,' | ', p.reldirname, p.reldirnamewithparent, select_pkg_filter(p.name,p.reldirname, p.reldirnamewithparent))
-                if select_pkg_filter(p.name,p.reldirname, p.reldirnamewithparent):
-                    #print('*** ',p.name,p.reldirname, p.reldirnamewithparent)
+                if select_pkg_filter(p.dirname):
                     p.setup(pkg_name2obj,extdeps,autodeps,True)
             #always enable the autodeps no matter what:
             if autodeps:
@@ -394,7 +387,7 @@ class PackageLoader:
         #6) Apply exclusion filter:
         if exclude_pkg_filter:
             for p in pkgs:
-                if exclude_pkg_filter(p.name,p.reldirname):
+                if exclude_pkg_filter(p.dirname):
                     p.disable()
 
         for p in self.enabled_pkgs_iter():
