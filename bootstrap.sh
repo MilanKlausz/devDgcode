@@ -226,11 +226,11 @@ export DGCODE_DIR
 #Provide dgbuild and dgrun functions. Make sure the installation area's setup
 #script is automatically sourced after each dgbuild invocation:
 
-DGCODE_INSTALL_DIR="${DGCODE_INSTALL_DIR:-$DGCODE_PROJECT_DIR}"
+DGCODE_INSTALL_DIR="${DGCODE_INSTALL_DIR:-$DGCODE_PROJECT_DIR/install}"
 export DGCODE_INSTALL_DIR
 
 function dgbuild() {
-    python3 $DGCODE_DIR/.system/bin/dgbuild "$@" ; dgec=$?; if [ -f $DGCODE_INSTALL_DIR/install/setup.sh ]; then source $DGCODE_INSTALL_DIR/install/setup.sh; fi; return $dgec
+    python3 $DGCODE_DIR/.system/bin/dgbuild "$@" ; dgec=$?; if [ -f $DGCODE_INSTALL_DIR/setup.sh ]; then source $DGCODE_INSTALL_DIR/setup.sh; fi; return $dgec
 }
 
 function dgrun() {
@@ -254,8 +254,8 @@ function dgrun() {
     source $DGCODE_DIR/install/setup.sh && $prog "$@"
 }
 
-if [ -f "$DGCODE_INSTALL_DIR/install/setup.sh" ]; then
-    source "$DGCODE_INSTALL_DIR/install/setup.sh"
+if [ -f "$DGCODE_INSTALL_DIR/setup.sh" ]; then
+    source "$DGCODE_INSTALL_DIR/setup.sh"
 fi
 
 if [ "x$DGCODE_BOOTSTRAP_QUIET" != "x1" ]; then

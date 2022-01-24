@@ -248,6 +248,12 @@ def perform_configuration(cmakeargs=[],
     #Global targets:
     global_targets = target_builder.create_global_targets()
 
+    #Create empty files to indicate the install and build directories, to be checked before using rm -rf on them
+    utils.touch(dirs.installdir_indicator)
+    assert os.path.exists(dirs.installdir_indicator)
+    utils.touch(dirs.blddir_indicator)
+    assert os.path.exists(dirs.blddir_indicator)
+
     #Perform setup calls to targets:
     for p in pl.enabled_pkgs_iter():
         if hasattr(p,'targets'):

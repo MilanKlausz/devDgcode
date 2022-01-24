@@ -332,14 +332,12 @@ class PackageLoader:
         #2) Read directory structure in order to find all package directories:
         pkgdirs={}
         for basedir in basedirs:
-          dirs = find_pkg_dirs(basedir)
-          #print('basedir:',basedir)
-          #print('dirs: ', dirs)
-          if not dirs:
+          tmp_dirs = find_pkg_dirs(basedir)
+          if tmp_dirs:
+            pkgdirs.update({d:basedir for d in tmp_dirs})
+          elif not basedir==dirs.projdir:
             error.error("No packages found in %s!"%basedir)
-          pkgdirs.update({dir:basedir for dir in dirs})
-
-        
+          
 
         #3) Construct Package objects and name->object maps:
         default_enabled = False if select_pkg_filter else True

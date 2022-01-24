@@ -291,7 +291,9 @@ if opt.clean:
         if not opt.quiet:
             print (prefix+"Removing temporary build, install and test directories and forgetting stored CMake args. Exiting.")
         utils.rm_rf(dirs.testdir)
+        if isdir(dirs.installdir): assert os.path.exists(dirs.installdir_indicator), "Missing install directory indicator in %s suggests possible problem with the DGCODE_INSTALL_DIR environment variable. Make sure you really want to delete the folder, and do it by hand!"%dirs.installdir
         utils.rm_rf(dirs.installdir)
+        if isdir(dirs.blddir): assert os.path.exists(dirs.blddir_indicator), "Missing build directory indicator in %s suggests possible problem with the DGCODE_BUILD_DIR environment variable. Make sure you really want to delete the folder, and do it by hand!"%dirs.blddir
         utils.rm_rf(dirs.blddir)
     else:
         if not opt.quiet:
@@ -608,7 +610,9 @@ if not opt.quiet:
     print ('%sSuccessfully built and installed all enabled packages!'%prefix)
     print (prefix)
     print ('%sSummary:'%prefix)
+    print (prefix+'  Project directory           : %s'%dirs.projdir)
     print (prefix+'  Installation directory           : %s'%dirs.installdir)
+    print (prefix+'  Build directory           : %s'%dirs.blddir)
 
     import col
     col_ok = col.ok
@@ -710,9 +714,6 @@ if opt.runtests:
         sys.exit(1 if ec > 128 else ec)
 
 if opt.install:
-    #print('\n\n************ DEBUG ************')# Milan
-    #print('. %s/setup.sh && dginstall -q "%s"'%(dirs.installdir,opt.install))
-    #print('************ DEBUG ************\n\n')
     ec=utils.system('. %s/setup.sh && dginstall -q "%s"'%(dirs.installdir,opt.install))
     if ec:
         sys.exit(1 if ec > 128 else ec)

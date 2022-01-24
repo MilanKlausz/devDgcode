@@ -45,8 +45,7 @@ def uninstall_package(d,pn):
     #a few sanity checks since we are about to use rm -rf:
     import utils
     assert d and not ' ' in d
-    print(d)
-    assert os.path.basename(d)=='install'
+    assert os.path.exists(install_dir_indicator(d))
     #FIXME: ess_foo_bar_blah might be script Blah from package Foo_Bar or script
     #Bar_Blah from package Foo. We should check that the symlinks goes to the
     #correct package! (or better yet, dgbuild should produce pickle file in
@@ -85,18 +84,25 @@ def code_dirs(system_dir):
     return dirs
 
 def build_dir():
-    build_dir = join(os.environ.get('DGCODE_BUILD_DIR', project_dir()),'.bld') #defaults to the 'project_dir/.bld' if unset
+    build_dir = os.environ.get('DGCODE_BUILD_DIR', join(project_dir(),'.bld')) #defaults to the 'project_dir/.bld' if unset
     build_dir_real = os.path.realpath(build_dir)
     if not os.path.isabs(build_dir_real):
       raise SystemExit('ERROR: The DGCODE_BUILD_DIR environment variable must hold an absolute path.')
     return build_dir_real
 
 def install_dir():
-    install_dir = join(os.environ.get('DGCODE_INSTALL_DIR', project_dir()),'install') #defaults to the 'project_dir/install' if unset
+    install_dir = os.environ.get('DGCODE_INSTALL_DIR', join(project_dir(),'install')) #defaults to the 'project_dir/install' if unset
+    #install_dir = join(os.environ.get('DGCODE_INSTALL_DIR', project_dir()),'install') #defaults to the 'project_dir/install' if unset
     install_dir_real = os.path.realpath(install_dir)
     if not os.path.isabs(install_dir_real):
       raise SystemExit('ERROR: The DGCODE_INSTALL_DIR environment variable must hold an absolute path.')
     return install_dir_real
+
+def build_dir_indicator(bld_dir):
+  return join(bld_dir,'.dgbuilddir')
+
+def install_dir_indicator(inst_dir):
+  return join(inst_dir,'.dginstalldir')
 
 def test_dir():
     return join(build_dir(),'testresults/')
