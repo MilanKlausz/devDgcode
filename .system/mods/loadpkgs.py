@@ -1,5 +1,6 @@
 from __future__ import print_function
 from __future__ import division
+import pathlib
 __metaclass__ = type#py2 backwards compatibility
 import os,sys,dirs
 import utils,langs,conf,error
@@ -70,14 +71,29 @@ def parse_depfile(pkgdir):
                 return (set(extdeps),set(pkgdeps),extra_cflags,extra_ldflags,extra_incdeps,dyncode,dyncodeoffset)
         _err(' : missing package() statement.')
 
+""" def assert_subdirs_casing(dirname): #TODO-casing
+  dircontent = os.listdir(dirname)
+  assert_casing(dircontent, dirname)
+  for item in dircontent:
+    if not item or item in ignore_dirs or item in ['.', '..']:
+      continue
+    d=os.path.join(dirname, item)
+    if os.path.isdir(d):
+      assert_subdirs_casing(d) """
+
+def assert_casing(dircontent, dirname):
+  assert len(dircontent) == len({d.lower() for d in dircontent}), 'Directory (and file) names differing only in casing are not allowed, due to being a potential source of error for different file systems. \nProblem occured in: %s'%dirname
 
 def find_pkg_dirs(dirname):
     if os.path.exists(os.path.join(dirname,conf.package_cfg_file)):
+        #assert_subdirs_casing(dirname) #TODO-casing 
         #dir is itself a pkg dir
         return [os.path.realpath(dirname)]
     #dir is not a pkg dir so check sub-dirs:
     pkg_dirs=[]
-    for item in os.listdir(dirname):
+    dircontent = os.listdir(dirname)
+    assert_casing(dircontent, dirname)
+    for item in dircontent:
         if not item or item[0]=='.':
             continue#always ignore hidden dirs
         d=os.path.join(dirname, item)
@@ -332,13 +348,14 @@ class PackageLoader:
         #2) Read directory structure in order to find all package directories:
         pkgdirs={}
         for basedir in basedirs:
+          parentdir =  os.path.abspath(os.path.join(basedir,'..'))
+          assert_casing(os.listdir(parentdir), parentdir)
           tmp_dirs = find_pkg_dirs(basedir)
           if tmp_dirs:
             pkgdirs.update({d:basedir for d in tmp_dirs})
           elif not basedir==dirs.projdir:
             error.error("No packages found in %s!"%basedir)
           
-
         #3) Construct Package objects and name->object maps:
         default_enabled = False if select_pkg_filter else True
         n2p={}
@@ -366,7 +383,7 @@ class PackageLoader:
             return g(pn,None)
         if select_pkg_filter:
             for p in pkgs:
-                if select_pkg_filter(p.dirname):
+                if select_pkg_filter(p.name,p.dirname):
                     p.setup(pkg_name2obj,extdeps,autodeps,True)
             #always enable the autodeps no matter what:
             if autodeps:
@@ -385,7 +402,7 @@ class PackageLoader:
         #6) Apply exclusion filter:
         if exclude_pkg_filter:
             for p in pkgs:
-                if exclude_pkg_filter(p.dirname):
+                if exclude_pkg_filter(p.name,p.dirname):
                     p.disable()
 
         for p in self.enabled_pkgs_iter():

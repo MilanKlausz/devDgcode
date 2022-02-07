@@ -45,7 +45,8 @@ def uninstall_package(d,pn):
     #a few sanity checks since we are about to use rm -rf:
     import utils
     assert d and not ' ' in d
-    assert os.path.exists(install_dir_indicator(d))
+    #assert os.path.exists(install_dir_indicator(d))
+    check_build_dir_indicator(d)
     #FIXME: ess_foo_bar_blah might be script Blah from package Foo_Bar or script
     #Bar_Blah from package Foo. We should check that the symlinks goes to the
     #correct package! (or better yet, dgbuild should produce pickle file in
@@ -98,12 +99,6 @@ def install_dir():
       raise SystemExit('ERROR: The DGCODE_INSTALL_DIR environment variable must hold an absolute path.')
     return install_dir_real
 
-def build_dir_indicator(bld_dir):
-  return join(bld_dir,'.dgbuilddir')
-
-def install_dir_indicator(inst_dir):
-  return join(inst_dir,'.dginstalldir')
-
 def test_dir():
     return join(build_dir(),'testresults/')
 
@@ -112,6 +107,26 @@ def framework_dir(system_dir):
 
 def validation_dir(system_dir):
   return os.path.realpath(join(system_dir,'../packages/Validation'))
+
+# directory indicators
+from pathlib import Path
+
+def build_dir_indicator(bld_dir):
+  return join(bld_dir,'.dgbuilddir')
+
+def install_dir_indicator(inst_dir):
+  return join(inst_dir,'.dginstalldir')
+
+def check_build_dir_indicator(bld_dir):
+  if Path(bld_dir).exists() and not Path(build_dir_indicator(bld_dir)).exists():
+     raise SystemExit('Missing build directory indicator in %s suggests possible problem with the DGCODE_BUILD_DIR environment variable. Make sure you really want to delete the folder, and do it by hand!'%bld_dir)
+  return True
+
+def check_install_dir_indicator(inst_dir):
+  if Path(inst_dir).exists() and not Path(install_dir_indicator(inst_dir)).exists():
+     raise SystemExit('Missing install directory indicator in %s suggests possible problem with the DGCODE_INSTALL_DIR environment variable. Make sure you really want to delete the folder, and do it by hand!'%inst_dir)
+  return True
+    
 
 def target_factories_for_patterns():
     import tfact_symlink as tfs

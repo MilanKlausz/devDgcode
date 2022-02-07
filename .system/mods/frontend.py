@@ -25,9 +25,9 @@ exists=os.path.exists
 def isfile(s): return os.path.exists(s) and not os.path.isdir(s)
 osx=not isfile('/proc/cpuinfo')
 
-########################
-### Parse arguments ####
-########################
+#########################
+### Parse arguments  ####
+#########################
 
 import dirs,utils,error
 rel_blddir=os.path.relpath(dirs.blddir)
@@ -217,13 +217,13 @@ def parse_args():
         #if 'NOT' in new_cfgvars:
         #    parser.error('Do not set NOT=... variable when supplying --project flag')
         projs = set(e.lower() for e in opt.project.split(','))
-        extra='Framework/*,'
+        extra='Framework::*,'
         if 'val' in projs:
             projs=[a for a in projs if a.lower() != 'val']
-            extra+='Validation/*,'
+            extra+='Validation::*,'
         if not projs:
             extra=extra[:-1]#remove comma
-        new_cfgvars['ONLY']='%s%s'%(extra,','.join('%s'%p for p in projs))
+        new_cfgvars['ONLY']='%s%s'%(extra,','.join('Projects::%s*'%p for p in projs))
         if not 'NOT' in new_cfgvars:
             new_cfgvars['NOT']=''
 ##    if opt.pkgs:
@@ -290,11 +290,13 @@ if opt.clean:
     if isdir(dirs.blddir) or isdir(dirs.installdir) or isdir(dirs.testdir):
         if not opt.quiet:
             print (prefix+"Removing temporary build, install and test directories and forgetting stored CMake args. Exiting.")
+        
+        from conf import check_install_dir_indicator, check_build_dir_indicator
+        if check_install_dir_indicator(dirs.installdir):
+          utils.rm_rf(dirs.installdir)
+        if check_build_dir_indicator(dirs.blddir):
+          utils.rm_rf(dirs.blddir)
         utils.rm_rf(dirs.testdir)
-        if isdir(dirs.installdir): assert os.path.exists(dirs.installdir_indicator), "Missing install directory indicator in %s suggests possible problem with the DGCODE_INSTALL_DIR environment variable. Make sure you really want to delete the folder, and do it by hand!"%dirs.installdir
-        utils.rm_rf(dirs.installdir)
-        if isdir(dirs.blddir): assert os.path.exists(dirs.blddir_indicator), "Missing build directory indicator in %s suggests possible problem with the DGCODE_BUILD_DIR environment variable. Make sure you really want to delete the folder, and do it by hand!"%dirs.blddir
-        utils.rm_rf(dirs.blddir)
     else:
         if not opt.quiet:
             print (prefix+"Nothing to clean. Exiting.")
@@ -323,7 +325,7 @@ for k,v in old_cfgvars.items():
 
 #Make sure that if nothing is specified, we compile just Framework packages:
 if not 'NOT' in cfgvars and not 'ONLY' in cfgvars and not opt.project and not opt.enableall:#and not opt.pkgs
-    cfgvars['ONLY'] = 'Framework/*'
+    cfgvars['ONLY'] = 'Framework::*'
 
 #Old check, we try to allow both variables now:
 #if 'ONLY' in cfgvars and 'NOT' in cfgvars:
@@ -374,7 +376,7 @@ if opt.show:
         print ('%s  - set variable by supplying VAR=VAL arguments to %s'%(prefix,progname))
         print ('%s  - unset a variable by setting it to nothing (VAR=)'%(prefix))
         print ('%s  - unset all variables by running %s with --forget (but note that'%(prefix,progname))
-        print ('%s    the ONLY variable is special and defaults to "Framework/*")'%prefix)
+        print ('%s    the ONLY variable is special and defaults to "Framework::*")'%prefix)
         print (prefix)
         print ('%sThese are the variables with special support in %s'%(prefix,progname))
         print (prefix)
@@ -383,45 +385,53 @@ if opt.show:
         print ('%s  - DG_EXTRA_LDFLAGS : Extra link flags to be passed to the linker'%prefix)
         print ('%s  - DG_RELAX         : Set to 1 to temporarily ignore compiler warnings'%prefix)
         print ('%s  - ONLY             : Enable only certain packages.'%prefix)
-        print ('%s                       Example: ONLY="Framework/*,BasicExamples"'%prefix)
+        print ('%s                       Example: ONLY="Framework::*,BasicExamples"'%prefix)
         print ('%s  - NOT              : Disable certain packages.'%prefix)
         print ('%s  - Geant4=0, ROOT=0, etc.. : Force a given external dependency to be'%prefix)
         print ('%s                              considered as absent, even if present.'%prefix)
     sys.exit(0)
 
 def create_filter(pattern):
-  #Patterns separated with ; or ,.
+    #Patterns separated with ; or ,.
+    #
+    #A '/' char indicates a pattern to be tested versus the path to the package,
+    #otherwise it will be a test just against the package name.
+    #
+    #matching is done case-insensitively via the fnmatch module
 
-  from pathlib import Path 
-
-  enabled_dirs = []
-  for part in [p.lower() for p in pattern.replace(';',',').split(',')]:
-    if part == 'framework/*': #all framework directories
-      enabled_dirs.append(dirs.fmwkdir)
-    elif part == 'val': #all validation directories
-      enabled_dirs.append(dirs.valdir)
-    elif part.startswith('framework::'): #specific framework directory
-      enabled_dirs.extend( Path(dirs.fmwkdir).glob('**/%s/'%part.split('::')[1]) ) 
-    elif Path(part).is_absolute(): #any absolute path
-      enabled_dirs.append(part)
-    elif part in [Path(dir).name.lower() for dir in dirs.extpkgdirs]: #external package directories (project dir or pkg dirs) by name 
-      enabled_dirs.extend([dir for dir in dirs.extpkgdirs if Path(dir).name.lower() == part])
-    else: #subdirectory under the external pkg directories (project dir or pkg dirs)
-      extdirs = []
-      for extpkgdir in [p.lower() for p in dirs.extpkgdirs]:
-          extdirs.extend(Path(extpkgdir).glob('**/%s/'%part)) 
-      if extdirs:
-        enabled_dirs.extend(extdirs)
+    aliases = dirs.pkgdir_aliases
+    def expand_alias(part):
+      if not '::' in part:
+        return part
+      if part.split('::')[0].lower() in aliases:
+        return os.path.join(aliases[part.split('::')[0].lower()], part.split('::')[1])
       else:
-        print('ERROR: unable to resolve: %s'%part)
-    
-  def the_filter(pkg):
-    for d in enabled_dirs:
-      if(Path(pkg.lower()).is_relative_to(str(d).lower())):
-        return True
-    return False
+        print(prefix+"Error: Can't find directory alias for %s in %s"%(part.split('::')[0],part))
+        sys.exit(1)
 
-  return the_filter
+    # Separate patterns, and expand directory aliases
+    pattern_parts = [expand_alias(p) for p in pattern.replace(';',',').split(',') if p]
+
+    import fnmatch,re
+    namepatterns = []
+    dirpatterns = []
+    for p in pattern_parts:
+      if not '/' in p:
+        namepatterns.append(re.compile(fnmatch.translate(p.lower())).match)
+      elif p.startswith('/'):
+        dirpatterns.append(re.compile(fnmatch.translate(p.lower())).match)
+      else:
+        # create pattern for ALL external (non-framework) package directories (project_dir and pkg_path directories)
+        dirpatterns.extend([re.compile(fnmatch.translate( ('%s/*/%s'%(d,p)).lower() )).match for d in dirs.extpkgdirs])
+
+    def the_filter(pkgname,absdir):
+        for p in namepatterns:
+            if p(pkgname.lower()): return True
+        for d in dirpatterns:
+            if d(absdir.lower()): return True
+        return False
+
+    return the_filter
 
 select_filter=create_filter(cfgvars['ONLY']) if 'ONLY' in cfgvars else None
 exclude_filter=create_filter(cfgvars['NOT']) if 'NOT' in cfgvars else None
@@ -610,9 +620,9 @@ if not opt.quiet:
     print ('%sSuccessfully built and installed all enabled packages!'%prefix)
     print (prefix)
     print ('%sSummary:'%prefix)
-    print (prefix+'  Project directory           : %s'%dirs.projdir)
+    print (prefix+'  Project directory                : %s'%dirs.projdir)
     print (prefix+'  Installation directory           : %s'%dirs.installdir)
-    print (prefix+'  Build directory           : %s'%dirs.blddir)
+    print (prefix+'  Build directory                  : %s'%dirs.blddir)
 
     import col
     col_ok = col.ok
@@ -724,7 +734,7 @@ if opt.install:
         print (prefix)
 
 if not opt.quiet:
-    if cfgvars.get('ONLY','')=='Framework/*' and not 'NOT' in cfgvars:
+    if cfgvars.get('ONLY','')=='Framework::*' and not 'NOT' in cfgvars:
         import col
         print (prefix+"%sNote that only Framework/ packages were enabled by default:%s"%(col.bldmsg_notallselectwarn,col.end))
         print (prefix)

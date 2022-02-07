@@ -68,3 +68,9 @@ def makefile_pkg_dir(pkg,*subpaths): return join('${PKG}',_pkgname(pkg),*subpath
 for d in [sysdir,blddir,*codedirs,installdir]:
     assert not ' ' in d, 'Spaces not allowed in directory names. Error with "%s"'%d 
 
+# Package directory aliases #keep them lowercase
+pkgdir_aliases = {
+  "framework": fmwkdir,
+  "validation": valdir,
+  "projects": projdir
+  }
