@@ -120,7 +120,7 @@ class DynPkgBuilder:
         #should. For safety, we ensure rebuild of all object files in this
         #package, and of all named targets as well - ensuring rebuilds of
         #targets in downstream packages:
-        for f in glob.glob(os.path.join(dirs.blddir,'named_targets','%s_*'%self.pkg.name)):
+        for f in glob.glob(dirs.blddir.joinpath('named_targets','%s_*'%self.pkg.name)):
             utils.rm_f(f)
         for f in glob.glob(dirs.pkg_cache_dir(self.pkg,'objs/*/*_deps.pkl')):
             utils.touch(f)
@@ -194,7 +194,6 @@ class DynPkgBuilder:
             with open(f1,'rb') as fh1, open(f2,'rb') as fh2:
                 return ( fh1.read() == fh2.read() )
 
-        bd=os.path.realpath(dirs.blddir)
         for subdir,fl in sorted(filelist.items()):
             target_sd=os.path.join(pd,subdir)
             if not os.path.exists(target_sd):
@@ -203,7 +202,7 @@ class DynPkgBuilder:
                 src_f = os.path.join(ud,subdir,f)
                 src_islink = os.path.islink(src_f)
                 src_realpath = os.path.realpath(src_f)
-                if src_islink and src_realpath.startswith(bd):
+                if src_islink and src_realpath.startswith(dirs.blddir):
                     #we could in principle support this, but easier not to.
                     error.error('Dynamic package builder created file which is a symlink to a temporary file: %s'%os.path.join(subdir,f))
                 assert os.path.exists(src_f)

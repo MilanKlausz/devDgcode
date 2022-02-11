@@ -7,7 +7,7 @@ class TargetRefLogs(target_base.Target):
     def __init__(self,pkg,applogs,scriptlogs):
         #No need for this, since each package will always have this part:
         #db.db['pkg2parts'][pkg.name].add('testref_links')
-        targetdir=join(dirs.installdir,'tests/testref')
+        targetdir=dirs.installdir.joinpath('tests/testref')
         utils.mkdir_p(targetdir)
         neededlinks=set()
         for f in applogs:

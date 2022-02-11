@@ -5,15 +5,16 @@ import utils
 import env
 
 def recreate():
-    fn=os.path.join(dirs.blddir,'setup.sh')
+    fn=dirs.blddir.joinpath('setup.sh')
 
     extra_binpath=':'.join(env.env['system']['runtime']['extra_bin_path'])
     extra_libpath=':'.join(env.env['system']['runtime']['extra_lib_path'])
     if extra_binpath: extra_binpath+=":"
     if extra_libpath: extra_libpath+=":"
 
-    instdir=os.path.realpath(dirs.installdir)
-    utils.mkdir_p(instdir)
+    utils.mkdir_p(dirs.installdir)
+    utils.touch(dirs.installdir_indicator)
+    assert dirs.installdir_indicator.exists()
     t="""#!/bin/bash
 
 ###############################################################################################################

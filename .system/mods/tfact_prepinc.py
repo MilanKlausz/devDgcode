@@ -26,7 +26,7 @@ class TargetPrepInc(target_base.Target):
             self.code.insert(0,'@if [ ${VERBOSE} -ge 0 ]; then echo "  %sInstalling %s headers%s"; fi'%(col.bldcol('headers'),pkg.name,col.bldend))
             db.db['pkg2parts'][pkg.name].add('libinc')
             li=dirs.pkg_dir(pkg,'libinc')
-            self._neededlinks.add((join(dirs.installdir,dirs.incdirname),pkg.name,li))
+            self._neededlinks.add((dirs.installdir.joinpath(dirs.incdirname),pkg.name,li))
             if self._has_compiled_target:
                 self._neededlinks.add((self._privincdir,pkg.name,li))
         #we also use this target to keep the DB of available public headers up to date (needed for header deps)

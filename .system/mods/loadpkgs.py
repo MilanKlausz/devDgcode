@@ -1,6 +1,6 @@
 from __future__ import print_function
 from __future__ import division
-import pathlib
+
 __metaclass__ = type#py2 backwards compatibility
 import os,sys,dirs
 import utils,langs,conf,error
@@ -71,28 +71,35 @@ def parse_depfile(pkgdir):
                 return (set(extdeps),set(pkgdeps),extra_cflags,extra_ldflags,extra_incdeps,dyncode,dyncodeoffset)
         _err(' : missing package() statement.')
 
-""" def assert_subdirs_casing(dirname): #TODO-casing
-  dircontent = os.listdir(dirname)
-  assert_casing(dircontent, dirname)
-  for item in dircontent:
-    if not item or item in ignore_dirs or item in ['.', '..']:
-      continue
-    d=os.path.join(dirname, item)
-    if os.path.isdir(d):
-      assert_subdirs_casing(d) """
+from pathlib import Path
+def check_case_insensitive_duplication(path_str):
+  path = Path(path_str)
+  if not path.exists():
+    return
+  parentContent = [d.lower() for d in os.listdir(path.parent)]
+  occurance = parentContent.count(path.name.lower())
+  if not occurance == 1:
+    raise SystemExit('Directory (and file) names differing only in casing are not allowed, due to being a potential source of error for different file systems. \nProblem occured with '%(path_str))
 
-def assert_casing(dircontent, dirname):
-  assert len(dircontent) == len({d.lower() for d in dircontent}), 'Directory (and file) names differing only in casing are not allowed, due to being a potential source of error for different file systems. \nProblem occured in: %s'%dirname
+def check_dir_case_insensitive_duplication(dircontent, path):
+  ''' Check if dircontent contains elements differing only in casing'''
+  if not len(dircontent) == len({d.lower() for d in dircontent}):
+    seen = set()
+    for d in [d.lower() for d in dircontent]:
+      if d in seen:
+        raise SystemExit('Directory (and file) names differing only in casing are not allowed, due to being a potential source of error for different file systems. \nProblem occured with %s in the directory'%(d,path))
+      else:
+        seen.add(d)
+    
 
 def find_pkg_dirs(dirname):
     if os.path.exists(os.path.join(dirname,conf.package_cfg_file)):
-        #assert_subdirs_casing(dirname) #TODO-casing 
         #dir is itself a pkg dir
         return [os.path.realpath(dirname)]
     #dir is not a pkg dir so check sub-dirs:
     pkg_dirs=[]
     dircontent = os.listdir(dirname)
-    assert_casing(dircontent, dirname)
+    check_dir_case_insensitive_duplication(dircontent, dirname)
     for item in dircontent:
         if not item or item[0]=='.':
             continue#always ignore hidden dirs
@@ -348,8 +355,7 @@ class PackageLoader:
         #2) Read directory structure in order to find all package directories:
         pkgdirs={}
         for basedir in basedirs:
-          parentdir =  os.path.abspath(os.path.join(basedir,'..'))
-          assert_casing(os.listdir(parentdir), parentdir)
+          check_case_insensitive_duplication(basedir)
           tmp_dirs = find_pkg_dirs(basedir)
           if tmp_dirs:
             pkgdirs.update({d:basedir for d in tmp_dirs})

@@ -240,16 +240,15 @@ def parse_args():
         parser.error("More than one of --clean, --forget, --show, --pkggraph, --pkginfo, --grep, --grepc, --replace, --find, --incinfo specified at the same time")
     opt.query_mode = query_mode_n > 0
     if query_mode_withpathzoom_n > 0:
-        codedirs_abs=[os.path.abspath(d) for d in dirs.codedirs]
         for a in args_unused:
             qp=os.path.abspath(os.path.realpath(a))
-            if not any([qp.startswith(d) for d in codedirs_abs]):
-                parser.error("grep/find/replace/... can only work on directories below %s"%codedirs_abs) #TODO ' '.join(codedirs_abs) might look nicer
+            if not any([qp.startswith(d) for d in dirs.codedirs]):
+                parser.error("grep/find/replace/... can only work on directories below %s"%dirs.codedirs) #TODO ' '.join(codedirs_abs) might look nicer
             gps=[d for d in glob.glob(qp) if os.path.isdir(d)]
             if not gps:
                 parser.error("no directory matches for '%s'"%a)
             for d in sorted(gps):
-              opt._querypaths+=['%s/'%os.path.relpath(d,codedir) for codedir in codedirs_abs if d.startswith(codedir)]
+              opt._querypaths+=['%s/'%os.path.relpath(d,codedir) for codedir in dirs.codedirs if d.startswith(codedir)]
         args_unused=[]
 
     if args_unused:
@@ -286,12 +285,13 @@ def unlock():
 import atexit
 atexit.register(unlock)
 
+from conf import check_install_dir_indicator, check_build_dir_indicator
+
 if opt.clean:
-    if isdir(dirs.blddir) or isdir(dirs.installdir) or isdir(dirs.testdir):
+    if dirs.blddir.is_dir() or dirs.installdir.is_dir() or dirs.testdir.is_dir():
         if not opt.quiet:
             print (prefix+"Removing temporary build, install and test directories and forgetting stored CMake args. Exiting.")
-        
-        from conf import check_install_dir_indicator, check_build_dir_indicator
+       
         if check_install_dir_indicator(dirs.installdir):
           utils.rm_rf(dirs.installdir)
         if check_build_dir_indicator(dirs.blddir):
@@ -350,7 +350,9 @@ if not opt.insist and oldsysts!=systs:
     if oldsysts[1]!=systs[1]: opt.insist = True
 
 if opt.insist:
+  if check_install_dir_indicator(dirs.installdir):
     utils.rm_rf(dirs.installdir)
+  if check_build_dir_indicator(dirs.blddir):
     utils.rm_rf(dirs.blddir)
 
 utils.mkdir_p(dirs.blddir)
@@ -546,8 +548,7 @@ if opt.incinfo:
         if isdir(fn):
             parser.error("Not a file: %s"%fn)
         fn=os.path.abspath(os.path.realpath(fn))
-        codedirs_abs=[os.path.abspath(d) for d in dirs.codedirs]
-        if not any([fn.startswith(d) for d in codedirs_abs]):
+        if not any([fn.startswith(d) for d in dirs.codedirs]):
         #if not fn.startswith(os.path.abspath(dirs.codedir)):#TODO: This currently fails for dynamic packages!
             parser.error("File must be located under %s"%dirs.codedirs)
         return [fn]#expands to a single file
@@ -573,7 +574,7 @@ if opt.pkginfo:
         sys.exit(0)
 
 if opt.pkggraph:
-    dotfile=os.path.join(dirs.blddir,'pkggraph.dot')
+    dotfile=dirs.blddir.joinpath('pkggraph.dot')
     import dotgen
     dotgen.dotgen(pkgloader,dotfile,enabled_only=opt.pkggraph_activeonly)
     if not opt.quiet:
@@ -648,6 +649,8 @@ if not opt.quiet:
                 out += '\n%s                                     %s%s%s'%(prefix,colbegin,s,colend)
         return out
         return ' '.join(l)
+    
+    print (prefix+'  Package path directories         : %s'%formatlist([str(d) for d in dirs.pkgpathdirs],None))
 
     nmax = 20
     pkg_enabled = sorted([p.name for p in pkgloader.pkgs if p.enabled])
@@ -706,6 +709,19 @@ if not opt.quiet:
     print (prefix+'  %s : %s'%(pkgtxt_en.ljust(32+(len(col_end)+len(col_ok) if n_enabled else 0)),formatlist(pkg_enabled,col_ok)))
     print (prefix+'  %s : %s'%(pkgtxt_dis.ljust(32+(len(col_end)+len(col_bad) if n_disabled else 0)),formatlist(pkg_disabled,col_bad)))
     print (prefix)
+    if opt.verbose:
+      fmwk_enabled = [p.name for p in pkgloader.pkgs if p.enabled and p.dirname.startswith(str(dirs.fmwkdir))]
+      val_enabled = [p.name for p in pkgloader.pkgs if p.enabled and p.dirname.startswith(str(dirs.valdir))]
+      proj_enabled = [p.name for p in pkgloader.pkgs if p.enabled and p.dirname.startswith(str(dirs.projdir))]
+      pkg_path_enabled = [p.name for p in pkgloader.pkgs if p.enabled and any([p.dirname.startswith(str(d)) for d in dirs.pkgpathdirs])]
+      pkg_source_breakdown = ['Framework    : %d'%len(fmwk_enabled),
+                              'Validation   : %d'%len(val_enabled) if len(val_enabled) else '', 
+                              'Project      : %d'%len(proj_enabled), 
+                              'Package path : %d'%len(pkg_path_enabled) if len(dirs.pkgpathdirs) else '']
+      print (prefix + 'Built package breakdown:')
+      for source_txt in [t for t in pkg_source_breakdown if t]:
+        print (prefix + '  ' + source_txt)
+      print (prefix)
     if cp['unused_vars']:
         print (prefix+'%sWARNING%s Unused user cfg variables  : %s'%(col_bad,col_end,formatlist(unused_vars_withvals,None)))
         print (prefix)

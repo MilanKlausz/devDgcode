@@ -22,7 +22,7 @@ class TargetPyInit(target_base.Target):
         compinit = os.path.isdir(dirs.pkg_dir(pkg,'pycpp__init'))
         fn=_ensure_create_pyinit(pkg,compinit)
         db.db['pkg2parts'][pkg.name].add('autopyinit__%s'%os.path.basename(fn))
-        neededlinks=set([(join(dirs.installdir,'python',pkg.name),'__init__.py',fn)])
+        neededlinks=set([(dirs.installdir.joinpath('python',pkg.name),'__init__.py',fn)])
         pklfile=dirs.pkg_cache_dir(pkg,'pyinit','pyinit.pkl')
         mpf=dirs.makefile_blddir(pklfile)
         utils.update_pkl_if_changed(neededlinks,pklfile)

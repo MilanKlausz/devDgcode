@@ -45,8 +45,8 @@ def uninstall_package(d,pn):
     #a few sanity checks since we are about to use rm -rf:
     import utils
     assert d and not ' ' in d
-    #assert os.path.exists(install_dir_indicator(d))
-    check_build_dir_indicator(d)
+    
+    check_install_dir_indicator(d)
     #FIXME: ess_foo_bar_blah might be script Blah from package Foo_Bar or script
     #Bar_Blah from package Foo. We should check that the symlinks goes to the
     #correct package! (or better yet, dgbuild should produce pickle file in
@@ -62,60 +62,62 @@ def uninstall_package(d,pn):
                                                                                                                                                       d,pn.lower(),
                                                                                                                                                       d,pn.lower()))
 
+from pathlib import Path
 #Get paths to all packages (including the framework and user packages)
-def project_dir():
-  proj_dir = os.environ.get('DGCODE_PROJECT_DIR', None)
-  if not proj_dir:
-    raise SystemExit('ERROR: The DGCODE_PROJECT_DIR environment variable must be set.') #TODO: Tell the user what to do
-  proj_dir_real = os.path.realpath(proj_dir)
-  if not os.path.isabs(proj_dir_real):
-    raise SystemExit('ERROR: The DGCODE_PROJECT_DIR environment variable must hold an absolute path.')
-  return proj_dir_real
 
-def ext_package_dirs():
-  dirs = [project_dir()]
+def project_dir():
+  proj_dir_env = os.environ.get('DGCODE_PROJECT_DIR', None)
+  if not proj_dir_env:
+    raise SystemExit('ERROR: The DGCODE_PROJECT_DIR environment variable must be set.') #TODO: Tell the user what to do
+  proj_dir = Path(proj_dir_env).resolve()
+  if not proj_dir.is_absolute():
+    raise SystemExit('ERROR: The DGCODE_PROJECT_DIR environment variable must hold an absolute path.')
+  return proj_dir
+
+def pkg_path_dirs():
+  dirs=[]
   pkg_path_env = os.environ.get('DGCODE_PKG_PATH', None)
   if(pkg_path_env):
-    dirs.extend([os.path.realpath(p.strip()) for p in pkg_path_env.split(':') if p.strip()])
+    dirs.extend([Path(p.strip()).resolve() for p in pkg_path_env.split(':') if p.strip()])
   return dirs
+
+def ext_package_dirs():
+  return [project_dir(),*pkg_path_dirs()]
 
 def code_dirs(system_dir):   
     dirs = ext_package_dirs()
-    dirs.append(os.path.realpath(join(system_dir,'../packages'))) #this might change
+    dirs.append(Path(system_dir).joinpath('../packages').resolve()) #this might change
     return dirs
 
 def build_dir():
-    build_dir = os.environ.get('DGCODE_BUILD_DIR', join(project_dir(),'.bld')) #defaults to the 'project_dir/.bld' if unset
-    build_dir_real = os.path.realpath(build_dir)
-    if not os.path.isabs(build_dir_real):
+    build_dir = os.environ.get('DGCODE_BUILD_DIR', Path(project_dir()).joinpath('.bld')) #defaults to the 'project_dir/.bld' if unset
+    build_dir_real = Path(build_dir).resolve()
+    if not build_dir_real.is_absolute():
       raise SystemExit('ERROR: The DGCODE_BUILD_DIR environment variable must hold an absolute path.')
     return build_dir_real
 
 def install_dir():
-    install_dir = os.environ.get('DGCODE_INSTALL_DIR', join(project_dir(),'install')) #defaults to the 'project_dir/install' if unset
-    #install_dir = join(os.environ.get('DGCODE_INSTALL_DIR', project_dir()),'install') #defaults to the 'project_dir/install' if unset
-    install_dir_real = os.path.realpath(install_dir)
-    if not os.path.isabs(install_dir_real):
+    install_dir = os.environ.get('DGCODE_INSTALL_DIR', Path(project_dir()).joinpath('install')) #defaults to the 'project_dir/install' if unset
+    install_dir_real = Path(install_dir).resolve()
+    if not install_dir_real.is_absolute():
       raise SystemExit('ERROR: The DGCODE_INSTALL_DIR environment variable must hold an absolute path.')
     return install_dir_real
 
 def test_dir():
-    return join(build_dir(),'testresults/')
+  return Path(build_dir()).joinpath('testresults/')
 
 def framework_dir(system_dir):
-  return os.path.realpath(join(system_dir,'../packages/Framework'))
+  return Path(system_dir).joinpath('../packages/Framework').resolve()
 
 def validation_dir(system_dir):
-  return os.path.realpath(join(system_dir,'../packages/Validation'))
+  return Path(system_dir).joinpath('../packages/Validation').resolve()
 
-# directory indicators
-from pathlib import Path
-
+# directory indicators - empty files to indicate the build/install directory, to be checked before using rm -rf on it
 def build_dir_indicator(bld_dir):
-  return join(bld_dir,'.dgbuilddir')
+  return Path(bld_dir).joinpath('.dgbuilddir')
 
 def install_dir_indicator(inst_dir):
-  return join(inst_dir,'.dginstalldir')
+  return Path(inst_dir).joinpath('.dginstalldir')
 
 def check_build_dir_indicator(bld_dir):
   if Path(bld_dir).exists() and not Path(build_dir_indicator(bld_dir)).exists():
