@@ -11,7 +11,7 @@ fmwkdir = conf.framework_dir(sysdir)
 valdir = conf.validation_dir(sysdir)
 blddir = conf.build_dir()
 blddir_indicator = conf.build_dir_indicator(blddir)
-makefiledir = blddir.joinpath('makefiles')
+makefiledir = blddir / 'makefiles'
 pkgpathdirs = conf.pkg_path_dirs()
 extpkgdirs = conf.ext_package_dirs()
 codedirs = conf.code_dirs(sysdir)
@@ -24,11 +24,11 @@ incdirname='include'
 libdirname='libs'
 
 sysinc = join(sysdir,'include')
-envcache = blddir.joinpath('env.cache')
-varcache = blddir.joinpath('vars.cache')#dynamic user settings (for pkg filters and cmake flags)
-systimestamp_cache=blddir.joinpath('systimestamp.cache')
-setupfile_cache=blddir.joinpath('setup.sh')
-lockfile=blddir.joinpath(".lock")
+envcache = blddir / 'env.cache'
+varcache = blddir / 'vars.cache' #dynamic user settings (for pkg filters and cmake flags)
+systimestamp_cache=blddir / 'systimestamp.cache'
+setupfile_cache=blddir / 'setup.sh'
+lockfile=blddir / ".lock"
 
 def makefile_instdir(*subpaths):
     if not subpaths:
@@ -56,7 +56,7 @@ def makefile_pkg_cache_dir(pkg,*subpaths):
     return join('${BLD}','pc',_pkgname(pkg),*subpaths)
 
 #where we link (or create dynamic pkgs):
-pkgdirbase = blddir.joinpath('pkgs')
+pkgdirbase = blddir / 'pkgs'
 def pkg_dir(pkg,*subpaths): return join(pkgdirbase,_pkgname(pkg),*subpaths)
 def makefile_pkg_dir(pkg,*subpaths): return join('${PKG}',_pkgname(pkg),*subpaths)
 

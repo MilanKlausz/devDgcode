@@ -53,7 +53,7 @@ class TargetSymlinks(target_base.Target):
 def create_tfactory_symlink(filepattern,destdir,chmodx,renamefct=None):
     import re
     match=re.compile(filepattern).match
-    destdirabs=join(dirs.installdir,destdir)
+    destdirabs=str(dirs.installdir / destdir) #converting to string to enable value insertion
     destdir_needs_pkgname = '%s' in destdir
     lf=utils.listfiles
     def tfactory_symlink(pkg,subdir):

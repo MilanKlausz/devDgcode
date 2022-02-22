@@ -86,38 +86,38 @@ def ext_package_dirs():
 
 def code_dirs(system_dir):   
     dirs = ext_package_dirs()
-    dirs.append(Path(system_dir).joinpath('../packages').resolve()) #this might change
+    dirs.append((Path(system_dir) / '../packages').resolve()) #this might change
     return dirs
 
 def build_dir():
-    build_dir = os.environ.get('DGCODE_BUILD_DIR', Path(project_dir()).joinpath('.bld')) #defaults to the 'project_dir/.bld' if unset
+    build_dir = os.environ.get('DGCODE_BUILD_DIR', Path(project_dir()) / '.bld') #defaults to the 'project_dir/.bld' if unset
     build_dir_real = Path(build_dir).resolve()
     if not build_dir_real.is_absolute():
       raise SystemExit('ERROR: The DGCODE_BUILD_DIR environment variable must hold an absolute path.')
     return build_dir_real
 
 def install_dir():
-    install_dir = os.environ.get('DGCODE_INSTALL_DIR', Path(project_dir()).joinpath('install')) #defaults to the 'project_dir/install' if unset
+    install_dir = os.environ.get('DGCODE_INSTALL_DIR', Path(project_dir()) / 'install') #defaults to the 'project_dir/install' if unset
     install_dir_real = Path(install_dir).resolve()
     if not install_dir_real.is_absolute():
       raise SystemExit('ERROR: The DGCODE_INSTALL_DIR environment variable must hold an absolute path.')
     return install_dir_real
 
 def test_dir():
-  return Path(build_dir()).joinpath('testresults/')
+  return Path(build_dir()) / 'testresults/'
 
 def framework_dir(system_dir):
-  return Path(system_dir).joinpath('../packages/Framework').resolve()
+  return (Path(system_dir) / '../packages/Framework').resolve()
 
 def validation_dir(system_dir):
-  return Path(system_dir).joinpath('../packages/Validation').resolve()
+  return (Path(system_dir) / '../packages/Validation').resolve()
 
 # directory indicators - empty files to indicate the build/install directory, to be checked before using rm -rf on it
 def build_dir_indicator(bld_dir):
-  return Path(bld_dir).joinpath('.dgbuilddir')
+  return Path(bld_dir) / '.dgbuilddir'
 
 def install_dir_indicator(inst_dir):
-  return Path(inst_dir).joinpath('.dginstalldir')
+  return Path(inst_dir) / '.dginstalldir'
 
 def check_build_dir_indicator(bld_dir):
   if Path(bld_dir).exists() and not Path(build_dir_indicator(bld_dir)).exists():

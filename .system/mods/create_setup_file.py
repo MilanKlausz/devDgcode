@@ -5,7 +5,7 @@ import utils
 import env
 
 def recreate():
-    fn=dirs.blddir.joinpath('setup.sh')
+    fn=dirs.blddir / 'setup.sh'
 
     extra_binpath=':'.join(env.env['system']['runtime']['extra_bin_path'])
     extra_libpath=':'.join(env.env['system']['runtime']['extra_lib_path'])

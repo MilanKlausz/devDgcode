@@ -574,7 +574,7 @@ if opt.pkginfo:
         sys.exit(0)
 
 if opt.pkggraph:
-    dotfile=dirs.blddir.joinpath('pkggraph.dot')
+    dotfile=dirs.blddir / 'pkggraph.dot'
     import dotgen
     dotgen.dotgen(pkgloader,dotfile,enabled_only=opt.pkggraph_activeonly)
     if not opt.quiet:
