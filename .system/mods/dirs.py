@@ -12,9 +12,9 @@ valdir = conf.validation_dir(sysdir)
 blddir = conf.build_dir()
 blddir_indicator = conf.build_dir_indicator(blddir)
 makefiledir = blddir / 'makefiles'
-pkgpathdirs = conf.pkg_path_dirs()
-extpkgdirs = conf.ext_package_dirs()
-codedirs = conf.code_dirs(sysdir)
+
+pkgsearchpath = conf.pkg_search_path(sysdir)
+
 installdir = conf.install_dir()
 installdir_indicator = conf.install_dir_indicator(installdir)
 testdir = conf.test_dir()
@@ -70,3 +70,16 @@ pkgdir_aliases = {
   "validation": valdir,
   "projects": projdir
   }
+
+from utils import mkdir_p,touch
+
+def create_bld_dir():
+  mkdir_p(blddir)
+  touch(blddir_indicator)
+  assert blddir.exists()
+  assert blddir_indicator.exists()
+
+def create_install_dir():
+  mkdir_p(installdir)
+  touch(installdir_indicator)
+  assert installdir_indicator.exists()

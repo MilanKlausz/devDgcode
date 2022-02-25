@@ -242,13 +242,13 @@ def parse_args():
     if query_mode_withpathzoom_n > 0:
         for a in args_unused:
             qp=os.path.abspath(os.path.realpath(a))
-            if not any([qp.startswith(d) for d in dirs.codedirs]):
-                parser.error("grep/find/replace/... can only work on directories below %s"%dirs.codedirs) #TODO ' '.join(codedirs_abs) might look nicer
+            if not any([qp.startswith(d) for d in dirs.pkgsearchpath]):
+                parser.error("grep/find/replace/... can only work on directories below %s"%dirs.pkgsearchpath) #TODO ' '.join(pkgsearchpath) might look nicer
             gps=[d for d in glob.glob(qp) if os.path.isdir(d)]
             if not gps:
                 parser.error("no directory matches for '%s'"%a)
             for d in sorted(gps):
-              opt._querypaths+=['%s/'%os.path.relpath(d,codedir) for codedir in dirs.codedirs if d.startswith(codedir)]
+              opt._querypaths+=['%s/'%os.path.relpath(d,codedir) for codedir in dirs.pkgsearchpath if d.startswith(codedir)]
         args_unused=[]
 
     if args_unused:
@@ -268,19 +268,21 @@ def parse_args():
 parser,opt,new_cfgvars=parse_args()
 
 #setup lockfile:
-if opt.removelock and exists(dirs.lockfile):
+if opt.removelock and dirs.lockfile.exists():
     os.remove(dirs.lockfile)
 if not hasattr(utils,'mkdir_p'):
     print ("WARNING: utils does not have mkdir_p attribute. Utils module is in file %s and syspath is %s"%(utils.__file__,sys.path))
-utils.mkdir_p(os.path.dirname(dirs.lockfile))
-if exists(dirs.lockfile):
+##utils.mkdir_p(os.path.dirname(dirs.lockfile))
+if dirs.lockfile.exists():
     utils.err('Presence of lock file indicates competing invocation of %s. Force removal with %s --removelock if you are sure this is incorrect.'%(progname,progname))
+dirs.create_bld_dir()
 utils.touch(dirs.lockfile)
-assert exists(dirs.lockfile)
+
+assert dirs.lockfile.exists()
 def unlock():
-    from os import remove,path
+    from os import remove
     from dirs import lockfile
-    if path.exists(lockfile):
+    if lockfile.exists():
         remove(lockfile)
 import atexit
 atexit.register(unlock)
@@ -354,8 +356,8 @@ if opt.insist:
     utils.rm_rf(dirs.installdir)
   if check_build_dir_indicator(dirs.blddir):
     utils.rm_rf(dirs.blddir)
+  dirs.create_bld_dir()
 
-utils.mkdir_p(dirs.blddir)
 utils.pkl_dump(cfgvars,dirs.varcache)
 utils.pkl_dump(systs,dirs.systimestamp_cache)
 
@@ -424,7 +426,8 @@ def create_filter(pattern):
         dirpatterns.append(re.compile(fnmatch.translate(p.lower())).match)
       else:
         # create pattern for ALL external (non-framework) package directories (project_dir and pkg_path directories)
-        dirpatterns.extend([re.compile(fnmatch.translate( ('%s/*/%s'%(d,p)).lower() )).match for d in dirs.extpkgdirs])
+        # create pattern for ALL paths in the pkg search path
+        dirpatterns.extend([re.compile(fnmatch.translate( ('%s/*/%s'%(d,p)).lower() )).match for d in dirs.pkgsearchpath])
 
     def the_filter(pkgname,absdir):
         for p in namepatterns:
@@ -548,9 +551,9 @@ if opt.incinfo:
         if isdir(fn):
             parser.error("Not a file: %s"%fn)
         fn=os.path.abspath(os.path.realpath(fn))
-        if not any([fn.startswith(d) for d in dirs.codedirs]):
+        if not any([fn.startswith(d) for d in dirs.pkgsearchpath]):
         #if not fn.startswith(os.path.abspath(dirs.codedir)):#TODO: This currently fails for dynamic packages!
-            parser.error("File must be located under %s"%dirs.codedirs)
+            parser.error("File must be located under %s"%dirs.pkgsearchpath)
         return [fn]#expands to a single file
     import incinfo
     fnsraw = opt.incinfo.split(',') if ',' in opt.incinfo else [opt.incinfo]
@@ -650,7 +653,17 @@ if not opt.quiet:
         return out
         return ' '.join(l)
     
-    print (prefix+'  Package path directories         : %s'%formatlist([str(d) for d in dirs.pkgpathdirs],None))
+    pkd_src_info = []
+    for basedir in dirs.pkgsearchpath:
+      pkg_nr = len([p.name for p in pkgloader.pkgs if p.dirname.startswith(str(basedir))])
+      pkg_enabled = len([p.name for p in pkgloader.pkgs if p.enabled and p.dirname.startswith(str(basedir))])
+      pkd_src_info.append([basedir, pkg_nr, pkg_enabled])
+
+    def pkg_info_str(info):
+      return "%s (%s%d%s pkgs, %s%d%s built)"%(info[0], col_bad,info[1],col_end, col_ok,info[2],col_end)
+
+    print (prefix+'  Package search path              : %s'%formatlist([str(d) for d in dirs.pkgsearchpath],None))
+    print (prefix+'  Package search path              : %s'%formatlist([pkg_info_str(info) for info in pkd_src_info],None))
 
     nmax = 20
     pkg_enabled = sorted([p.name for p in pkgloader.pkgs if p.enabled])
@@ -709,19 +722,6 @@ if not opt.quiet:
     print (prefix+'  %s : %s'%(pkgtxt_en.ljust(32+(len(col_end)+len(col_ok) if n_enabled else 0)),formatlist(pkg_enabled,col_ok)))
     print (prefix+'  %s : %s'%(pkgtxt_dis.ljust(32+(len(col_end)+len(col_bad) if n_disabled else 0)),formatlist(pkg_disabled,col_bad)))
     print (prefix)
-    if opt.verbose:
-      fmwk_enabled = [p.name for p in pkgloader.pkgs if p.enabled and p.dirname.startswith(str(dirs.fmwkdir))]
-      val_enabled = [p.name for p in pkgloader.pkgs if p.enabled and p.dirname.startswith(str(dirs.valdir))]
-      proj_enabled = [p.name for p in pkgloader.pkgs if p.enabled and p.dirname.startswith(str(dirs.projdir))]
-      pkg_path_enabled = [p.name for p in pkgloader.pkgs if p.enabled and any([p.dirname.startswith(str(d)) for d in dirs.pkgpathdirs])]
-      pkg_source_breakdown = ['Framework    : %d'%len(fmwk_enabled),
-                              'Validation   : %d'%len(val_enabled) if len(val_enabled) else '', 
-                              'Project      : %d'%len(proj_enabled), 
-                              'Package path : %d'%len(pkg_path_enabled) if len(dirs.pkgpathdirs) else '']
-      print (prefix + 'Built package breakdown:')
-      for source_txt in [t for t in pkg_source_breakdown if t]:
-        print (prefix + '  ' + source_txt)
-      print (prefix)
     if cp['unused_vars']:
         print (prefix+'%sWARNING%s Unused user cfg variables  : %s'%(col_bad,col_end,formatlist(unused_vars_withvals,None)))
         print (prefix)

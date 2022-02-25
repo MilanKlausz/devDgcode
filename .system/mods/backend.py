@@ -27,7 +27,7 @@ def perform_configuration(cmakeargs=[],
     possible_extdeps = set(os.path.basename(f)[7:-6] for f in glob.glob(os.path.join(dirs.cmakedetectdir,'optional/ExtDep_*.cmake')))
 
     #Inspect package tree and load the necessary config files, given the filters:
-    pl = loadpkgs.PackageLoader(dirs.codedirs,
+    pl = loadpkgs.PackageLoader(dirs.pkgsearchpath,
                                 possible_extdeps,
                                 select_filter,
                                 exclude_filter,
@@ -42,8 +42,7 @@ def perform_configuration(cmakeargs=[],
         return (dict( (b,find_executable(b)) for b in set(envdict['autoreconf']['bin_list'].split(';'))),
                 dict( (e,os.getenv(e)) for e in set(envdict['autoreconf']['env_list'].split(';'))))
 
-    utils.mkdir_p(dirs.blddir)
-    utils.touch(dirs.blddir_indicator)
+    assert dirs.blddir.exists()
     assert dirs.blddir_indicator.exists()
     envdict=None
 

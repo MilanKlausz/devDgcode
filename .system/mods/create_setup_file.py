@@ -12,9 +12,7 @@ def recreate():
     if extra_binpath: extra_binpath+=":"
     if extra_libpath: extra_libpath+=":"
 
-    utils.mkdir_p(dirs.installdir)
-    utils.touch(dirs.installdir_indicator)
-    assert dirs.installdir_indicator.exists()
+    dirs.create_install_dir()
     t="""#!/bin/bash
 
 ###############################################################################################################

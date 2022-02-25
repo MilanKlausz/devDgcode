@@ -74,20 +74,12 @@ def project_dir():
     raise SystemExit('ERROR: The DGCODE_PROJECT_DIR environment variable must hold an absolute path.')
   return proj_dir
 
-def pkg_path_dirs():
-  dirs=[]
+def pkg_search_path(system_dir):
+  dirs=[framework_dir(system_dir),project_dir()]
   pkg_path_env = os.environ.get('DGCODE_PKG_PATH', None)
   if(pkg_path_env):
     dirs.extend([Path(p.strip()).resolve() for p in pkg_path_env.split(':') if p.strip()])
   return dirs
-
-def ext_package_dirs():
-  return [project_dir(),*pkg_path_dirs()]
-
-def code_dirs(system_dir):   
-    dirs = ext_package_dirs()
-    dirs.append((Path(system_dir) / '../packages').resolve()) #this might change
-    return dirs
 
 def build_dir():
     build_dir = os.environ.get('DGCODE_BUILD_DIR', Path(project_dir()) / '.bld') #defaults to the 'project_dir/.bld' if unset
