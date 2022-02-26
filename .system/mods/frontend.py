@@ -34,10 +34,11 @@ rel_blddir=os.path.relpath(dirs.blddir)
 rel_instdir=os.path.relpath(dirs.installdir)
 rel_testdir=os.path.relpath(dirs.testdir)
 
-if not os.path.realpath(os.getcwd()).startswith(os.path.realpath(os.getenv('DGCODE_DIR'))):
-    utils.err(['This instance of %s is associated with'%progname,
-               '','      %s'%os.getenv('DGCODE_DIR'),'',
-               'and must only be invoked in that directory or its subdirs.'])
+if not any([os.path.realpath(os.getcwd()).startswith(str(d)) for d in [dirs.fmwkdir.parent.parent, dirs.projdir]]):
+    utils.err(['This instance of %s is associated with'%progname,'',
+               '      dgcode dir:  %s'%dirs.fmwkdir.parent.parent,
+               '      project dir: %s'%dirs.projdir,'',
+               'and must only be invoked in those directories or their subdirs.'])
 
 
 def parse_args():
