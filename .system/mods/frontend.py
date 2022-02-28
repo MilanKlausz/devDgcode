@@ -40,6 +40,7 @@ if not any([os.path.realpath(os.getcwd()).startswith(str(d)) for d in [dirs.fmwk
                '      project dir: %s'%dirs.projdir,'',
                'and must only be invoked in those directories or their subdirs.'])
 
+proj_pkg_selection_enabled = os.environ.get('DGCODE_ENABLE_PROJECT_PKG_SELECTION','')
 
 def parse_args():
 
@@ -86,13 +87,15 @@ def parse_args():
                              help="Shortcut for CMAKE_BUILD_TYPE=DEBUG")
     parser.add_option_group(group_cfgvars)
 
-    group_pkgselect = OptionGroup(parser, "Selecting what packages to enable",
+    if proj_pkg_selection_enabled:
+      group_pkgselect = OptionGroup(parser, "Selecting what packages to enable",
                                   "The flags below provide a convenient alternative to"
                                   " direct modification of the configuration variable named \"ONLY\". Default is"
                                   " just to enable Framework/ packages.")
-    group_pkgselect.add_option("-a","--all",action='store_true', default=False,dest='enableall',
+      group_pkgselect.add_option("-a","--all",action='store_true', default=False,dest='enableall',
                              help="Enable *all* packages.")
-    group_pkgselect.add_option("-p","--project",
+    
+      group_pkgselect.add_option("-p","--project",
                              action='store', dest="project", default='',metavar='PROJ',
                              help='Enable packages in selected projects (under packages/ '
                              ' or folders defined by the DGCODE_PKG_PATH environment variable).'
@@ -103,7 +106,7 @@ def parse_args():
 #                             help='Enable these packages in addition to those selected by'
 #                             ' --project (can use wildcards and comma separation).')
 #    #TODO: Make *exclusion* easy as well (Need both NOT and ONLY vars to work at the same time).
-    parser.add_option_group(group_pkgselect)
+      parser.add_option_group(group_pkgselect)
 
     group_query = OptionGroup(parser, "Query options")
 
@@ -191,13 +194,13 @@ def parse_args():
     if opt.release: new_cfgvars['CMAKE_BUILD_TYPE']='RELEASE'
     if opt.debug: new_cfgvars['CMAKE_BUILD_TYPE']='DEBUG'
 
-    if opt.project and opt.enableall:
+    if proj_pkg_selection_enabled and opt.project and opt.enableall:
         parser.error('Do not specify both --all and --project')
 
     #if opt.pkgs and opt.enableall:
         #parser.error('Do not specify both --all and --project')
 
-    if opt.enableall:
+    if proj_pkg_selection_enabled and opt.enableall:
         if 'ONLY' in new_cfgvars:
             parser.error('Do not set ONLY=... variable when supplying --all flag')
         #if 'NOT' in new_cfgvars:
@@ -211,7 +214,7 @@ def parse_args():
 #            parser.error('Do not set ONLY=... variable when supplying --pkg flag')
 #        if 'NOT' in new_cfgvars:
 #            parser.error('Do not set NOT=... variable when supplying --pkg flag')
-    if opt.project:
+    if proj_pkg_selection_enabled and opt.project:
         #TODO: This is rather specific to our way of structuring directories...
         if 'ONLY' in new_cfgvars:
             parser.error('Do not set ONLY=... variable when supplying --project flag')
@@ -326,9 +329,14 @@ for k,v in old_cfgvars.items():
     if not k in new_cfgvars:
         cfgvars[k]=v
 
-#Make sure that if nothing is specified, we compile just Framework packages:
-if not 'NOT' in cfgvars and not 'ONLY' in cfgvars and not opt.project and not opt.enableall:#and not opt.pkgs
-    cfgvars['ONLY'] = 'Framework::*'
+#Make sure that if nothing is specified, we compile ALL packages, 
+# or just Framework packages if project package selection is enabled:
+if not 'NOT' in cfgvars and not 'ONLY' in cfgvars: #and not opt.pkgs
+  if not proj_pkg_selection_enabled:
+    cfgvars['ONLY'] = '*'
+  elif not opt.project and not opt.enableall:
+    cfgvars['ONLY'] = 'Framework::*,'
+
 
 #Old check, we try to allow both variables now:
 #if 'ONLY' in cfgvars and 'NOT' in cfgvars:
@@ -663,7 +671,6 @@ if not opt.quiet:
     def pkg_info_str(info):
       return "%s (%s%d%s pkgs, %s%d%s built)"%(info[0], col_bad,info[1],col_end, col_ok,info[2],col_end)
 
-    print (prefix+'  Package search path              : %s'%formatlist([str(d) for d in dirs.pkgsearchpath],None))
     print (prefix+'  Package search path              : %s'%formatlist([pkg_info_str(info) for info in pkd_src_info],None))
 
     nmax = 20

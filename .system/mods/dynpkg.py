@@ -202,7 +202,7 @@ class DynPkgBuilder:
                 src_f = os.path.join(ud,subdir,f)
                 src_islink = os.path.islink(src_f)
                 src_realpath = os.path.realpath(src_f)
-                if src_islink and src_realpath.startswith(dirs.blddir):
+                if src_islink and src_realpath.startswith(str(dirs.blddir)):
                     #we could in principle support this, but easier not to.
                     error.error('Dynamic package builder created file which is a symlink to a temporary file: %s'%os.path.join(subdir,f))
                 assert os.path.exists(src_f)
