@@ -18,7 +18,7 @@ pkgsearchpath = conf.pkg_search_path(sysdir)
 installdir = conf.install_dir()
 installdir_indicator = conf.install_dir_indicator(installdir)
 testdir = conf.test_dir()
-projdir = conf.project_dir()
+projdir = conf.projects_dir()
 cmakedetectdir = join(sysdir,'cmakedetect')
 incdirname='include'
 libdirname='libs'
@@ -29,6 +29,8 @@ varcache = blddir / 'vars.cache' #dynamic user settings (for pkg filters and cma
 systimestamp_cache=blddir / 'systimestamp.cache'
 setupfile_cache=blddir / 'setup.sh'
 lockfile=blddir / ".lock"
+
+pathdict = dict(((d, eval(d)) for d in ('sysdir','fmwkdir','projdir','pkgsearchpath','blddir','installdir','testdir')))
 
 def makefile_instdir(*subpaths):
     if not subpaths:

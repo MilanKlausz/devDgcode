@@ -13,7 +13,7 @@ swversions={
     'pymod:scipy':dict(oldest='1.3.0',recommended='1.6.3'),#1.3.0 is first release without python2 support
     'pymod:pandas':dict(oldest='0.24.2',recommended='1.2.4'),
     'pymod:mcpl':dict(oldest='1.3.0',recommended='1.3.2'),#1.3.0 has some python api issues, but we don't want to make trouble for users right now.
-    'pymod:ptpython':dict(oldest='2.0.4',recommended='3.0.18'),
+    'pymod:ptpython':dict(oldest='2.0.4',recommended='3.0.20'),
     #TODO: Other interesting ones: 'h5py','pyqt5', ipython,... (note: 'PyNE' is NOT the nuclear one)
 }
 

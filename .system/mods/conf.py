@@ -65,31 +65,31 @@ def uninstall_package(d,pn):
 from pathlib import Path
 #Get paths to all packages (including the framework and user packages)
 
-def project_dir():
-  proj_dir_env = os.environ.get('DGCODE_PROJECT_DIR', None)
+def projects_dir():
+  proj_dir_env = os.environ.get('DGCODE_PROJECTS_DIR', None)
   if not proj_dir_env:
-    raise SystemExit('ERROR: The DGCODE_PROJECT_DIR environment variable must be set.') #TODO: Tell the user what to do
+    raise SystemExit('ERROR: The DGCODE_PROJECTS_DIR environment variable must be set.') #TODO: Tell the user what to do
   proj_dir = Path(proj_dir_env).resolve()
   if not proj_dir.is_absolute():
-    raise SystemExit('ERROR: The DGCODE_PROJECT_DIR environment variable must hold an absolute path.')
+    raise SystemExit('ERROR: The DGCODE_PROJECTS_DIR environment variable must hold an absolute path.')
   return proj_dir
 
 def pkg_search_path(system_dir):
-  dirs=[framework_dir(system_dir),project_dir()]
+  dirs=[framework_dir(system_dir),projects_dir()]
   pkg_path_env = os.environ.get('DGCODE_PKG_PATH', None)
   if(pkg_path_env):
     dirs.extend([Path(p.strip()).resolve() for p in pkg_path_env.split(':') if p.strip()])
   return dirs
 
 def build_dir():
-    build_dir = os.environ.get('DGCODE_BUILD_DIR', Path(project_dir()) / '.bld') #defaults to the 'project_dir/.bld' if unset
+    build_dir = os.environ.get('DGCODE_BUILD_DIR', Path(projects_dir()) / '.bld') #defaults to the 'projects_dir/.bld' if unset
     build_dir_real = Path(build_dir).resolve()
     if not build_dir_real.is_absolute():
       raise SystemExit('ERROR: The DGCODE_BUILD_DIR environment variable must hold an absolute path.')
     return build_dir_real
 
 def install_dir():
-    install_dir = os.environ.get('DGCODE_INSTALL_DIR', Path(project_dir()) / 'install') #defaults to the 'project_dir/install' if unset
+    install_dir = os.environ.get('DGCODE_INSTALL_DIR', Path(projects_dir()) / 'install') #defaults to the 'projects_dir/install' if unset
     install_dir_real = Path(install_dir).resolve()
     if not install_dir_real.is_absolute():
       raise SystemExit('ERROR: The DGCODE_INSTALL_DIR environment variable must hold an absolute path.')

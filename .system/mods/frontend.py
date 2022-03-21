@@ -34,13 +34,14 @@ rel_blddir=os.path.relpath(dirs.blddir)
 rel_instdir=os.path.relpath(dirs.installdir)
 rel_testdir=os.path.relpath(dirs.testdir)
 
-if not any([os.path.realpath(os.getcwd()).startswith(str(d)) for d in [dirs.fmwkdir.parent.parent, dirs.projdir]]):
+if not any([os.path.realpath(os.getcwd()).startswith(str(d)) for d in [dirs.fmwkdir.parent.parent, dirs.pkgsearchpath]]):
     utils.err(['This instance of %s is associated with'%progname,'',
                '      dgcode dir:  %s'%dirs.fmwkdir.parent.parent,
-               '      project dir: %s'%dirs.projdir,'',
+               '      package search path: %s'%str(dirs.pkgsearchpath[0]),
+               *['                         : %s'%str(d) for d in dirs.pkgsearchpath[1:]], '',
                'and must only be invoked in those directories or their subdirs.'])
 
-proj_pkg_selection_enabled = os.environ.get('DGCODE_ENABLE_PROJECT_PKG_SELECTION','')
+proj_pkg_selection_enabled = os.environ.get('DGCODE_ENABLE_PROJECTS_PKG_SELECTION_FLAG','')
 
 def parse_args():
 
@@ -87,14 +88,13 @@ def parse_args():
                              help="Shortcut for CMAKE_BUILD_TYPE=DEBUG")
     parser.add_option_group(group_cfgvars)
 
-    if proj_pkg_selection_enabled:
-      group_pkgselect = OptionGroup(parser, "Selecting what packages to enable",
+    group_pkgselect = OptionGroup(parser, "Selecting what packages to enable",
                                   "The flags below provide a convenient alternative to"
-                                  " direct modification of the configuration variable named \"ONLY\". Default is"
-                                  " just to enable Framework/ packages.")
-      group_pkgselect.add_option("-a","--all",action='store_true', default=False,dest='enableall',
+                                  " direct modification of the configuration variable named \"ONLY\". Default is to enable all packages.")
+    group_pkgselect.add_option("-a","--all",action='store_true', default=False,dest='enableall',
                              help="Enable *all* packages.")
-    
+
+    if proj_pkg_selection_enabled:
       group_pkgselect.add_option("-p","--project",
                              action='store', dest="project", default='',metavar='PROJ',
                              help='Enable packages in selected projects (under packages/ '
@@ -106,7 +106,8 @@ def parse_args():
 #                             help='Enable these packages in addition to those selected by'
 #                             ' --project (can use wildcards and comma separation).')
 #    #TODO: Make *exclusion* easy as well (Need both NOT and ONLY vars to work at the same time).
-      parser.add_option_group(group_pkgselect)
+
+    parser.add_option_group(group_pkgselect)
 
     group_query = OptionGroup(parser, "Query options")
 
@@ -194,42 +195,35 @@ def parse_args():
     if opt.release: new_cfgvars['CMAKE_BUILD_TYPE']='RELEASE'
     if opt.debug: new_cfgvars['CMAKE_BUILD_TYPE']='DEBUG'
 
-    if proj_pkg_selection_enabled and opt.project and opt.enableall:
+    if proj_pkg_selection_enabled:
+      if opt.project and opt.enableall:
         parser.error('Do not specify both --all and --project')
+
+      if opt.project:
+          #TODO: This is rather specific to our way of structuring directories...
+          if 'ONLY' in new_cfgvars:
+              parser.error('Do not set ONLY=... variable when supplying --project flag')
+          #if 'NOT' in new_cfgvars:
+          #    parser.error('Do not set NOT=... variable when supplying --project flag')
+          projs = set(e.lower() for e in opt.project.split(','))
+          extra='Framework::*,'
+          if 'val' in projs:
+              projs=[a for a in projs if a.lower() != 'val']
+              extra+='Validation::*,'
+          if not projs:
+              extra=extra[:-1]#remove comma
+          new_cfgvars['ONLY']='%s%s'%(extra,','.join('Projects::%s*'%p for p in projs))
+          if not 'NOT' in new_cfgvars:
+              new_cfgvars['NOT']=''
 
     #if opt.pkgs and opt.enableall:
         #parser.error('Do not specify both --all and --project')
-
-    if proj_pkg_selection_enabled and opt.enableall:
-        if 'ONLY' in new_cfgvars:
-            parser.error('Do not set ONLY=... variable when supplying --all flag')
-        #if 'NOT' in new_cfgvars:
-        #    parser.error('Do not set NOT=... variable when supplying --all flag')
-        if not 'NOT' in new_cfgvars:
-            new_cfgvars['NOT']=''
-        new_cfgvars['ONLY']='*'#this is how we make sure --all is remembered
 
 #    if opt.pkgs:
 #        if 'ONLY' in new_cfgvars:
 #            parser.error('Do not set ONLY=... variable when supplying --pkg flag')
 #        if 'NOT' in new_cfgvars:
 #            parser.error('Do not set NOT=... variable when supplying --pkg flag')
-    if proj_pkg_selection_enabled and opt.project:
-        #TODO: This is rather specific to our way of structuring directories...
-        if 'ONLY' in new_cfgvars:
-            parser.error('Do not set ONLY=... variable when supplying --project flag')
-        #if 'NOT' in new_cfgvars:
-        #    parser.error('Do not set NOT=... variable when supplying --project flag')
-        projs = set(e.lower() for e in opt.project.split(','))
-        extra='Framework::*,'
-        if 'val' in projs:
-            projs=[a for a in projs if a.lower() != 'val']
-            extra+='Validation::*,'
-        if not projs:
-            extra=extra[:-1]#remove comma
-        new_cfgvars['ONLY']='%s%s'%(extra,','.join('Projects::%s*'%p for p in projs))
-        if not 'NOT' in new_cfgvars:
-            new_cfgvars['NOT']=''
 ##    if opt.pkgs:
 ##        pkgs = set(e.lower() for e in opt.pkg.split(','))
 ##        _only=new_cfgvars.get('ONLY','')
@@ -237,6 +231,14 @@ def parse_args():
 ##        new_cfgvars['NOT']=''
 ##     .... todo...
 
+    if opt.enableall:
+        if 'ONLY' in new_cfgvars:
+            parser.error('Do not set ONLY=... variable when supplying --all flag')
+        #if 'NOT' in new_cfgvars:
+        #    parser.error('Do not set NOT=... variable when supplying --all flag')
+        if not 'NOT' in new_cfgvars:
+            new_cfgvars['NOT']=''
+        new_cfgvars['ONLY']='*'#this is how we make sure --all is remembered
 
     query_mode_withpathzoom_n = sum(int(bool(a)) for a in [opt.grep,opt.replace,opt.find])
     query_mode_n = query_mode_withpathzoom_n + sum(int(bool(a)) for a in [opt.pkggraph,opt.pkginfo,opt.incinfo])
@@ -307,7 +309,6 @@ if opt.clean:
         if not opt.quiet:
             print (prefix+"Nothing to clean. Exiting.")
     sys.exit(0)
-
 try:
     old_cfgvars = utils.pkl_load(dirs.varcache)
 except IOError:
@@ -335,7 +336,7 @@ if not 'NOT' in cfgvars and not 'ONLY' in cfgvars: #and not opt.pkgs
   if not proj_pkg_selection_enabled:
     cfgvars['ONLY'] = '*'
   elif not opt.project and not opt.enableall:
-    cfgvars['ONLY'] = 'Framework::*,'
+    cfgvars['NOT'] = 'Projects::*'
 
 
 #Old check, we try to allow both variables now:
@@ -434,7 +435,6 @@ def create_filter(pattern):
       elif p.startswith('/'):
         dirpatterns.append(re.compile(fnmatch.translate(p.lower())).match)
       else:
-        # create pattern for ALL external (non-framework) package directories (project_dir and pkg_path directories)
         # create pattern for ALL paths in the pkg search path
         dirpatterns.extend([re.compile(fnmatch.translate( ('%s/*/%s'%(d,p)).lower() )).match for d in dirs.pkgsearchpath])
 
@@ -633,7 +633,7 @@ if not opt.quiet:
     print ('%sSuccessfully built and installed all enabled packages!'%prefix)
     print (prefix)
     print ('%sSummary:'%prefix)
-    print (prefix+'  Project directory                : %s'%dirs.projdir)
+    print (prefix+'  Projects directory               : %s'%dirs.projdir)
     print (prefix+'  Installation directory           : %s'%dirs.installdir)
     print (prefix+'  Build directory                  : %s'%dirs.blddir)
 
@@ -666,10 +666,10 @@ if not opt.quiet:
     for basedir in dirs.pkgsearchpath:
       pkg_nr = len([p.name for p in pkgloader.pkgs if p.dirname.startswith(str(basedir))])
       pkg_enabled = len([p.name for p in pkgloader.pkgs if p.enabled and p.dirname.startswith(str(basedir))])
-      pkd_src_info.append([basedir, pkg_nr, pkg_enabled])
+      pkd_src_info.append([basedir, pkg_enabled, (pkg_nr-pkg_enabled) ])
 
     def pkg_info_str(info):
-      return "%s (%s%d%s pkgs, %s%d%s built)"%(info[0], col_bad,info[1],col_end, col_ok,info[2],col_end)
+      return "%s (%s%d%s built, %s%d%s skipped)"%(info[0], col_ok,info[1],col_end, col_bad,info[2],col_end,)
 
     print (prefix+'  Package search path              : %s'%formatlist([pkg_info_str(info) for info in pkd_src_info],None))
 

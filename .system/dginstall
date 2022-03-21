@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+raise SystemExit('ERROR: The dginstall command is currently not working properly and has therefore been disabled')
 import os,sys
 path=os.path
 join=path.join

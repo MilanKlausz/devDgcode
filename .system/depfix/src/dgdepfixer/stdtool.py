@@ -799,12 +799,22 @@ fi
 
 export DGDEPDIR_tmp="$( cd -P "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-python3 - <<EOF
+CI_PLATFORM=
+if [[ ! -z "${GITHUB_SERVER_URL}" ]] && [[ "$CI" = true ]]; then 
+    CI_PLATFORM="GITHUB RUNNER"
+fi
+
+if [ "$CI_PLATFORM" != "GITHUB RUNNER" ]; then
+    python3 - <<EOF
 import sys,os,pathlib
 fpref=pathlib.Path(os.environ['DGDEPDIR_tmp']).joinpath('.py3fingerprint').read_text()
 fp=str([sys.version_info[0:2],os.__file__])
 sys.exit(0 if fpref==fp else 1)
 EOF
+else
+    true
+fi
+
 if [ $? != 0 ]; then
     echo "ERROR: This dgcode dependencies setup was created with a different installation of python3 than the one currently in the path."
     unset DGDEPDIR_tmp
@@ -823,7 +833,9 @@ for i in "$DGDEPDIR/extras"/*/setup.sh; do
         . $i
     fi
 done
+if [ "$CI_PLATFORM" != "GITHUB RUNNER" ]; then
 dgdepfixer --summarise
+fi
 """.splitlines())
 
         for l in setup_sh:
@@ -914,6 +926,8 @@ unset DGDEPDIR_tmptmp
     #mark installation as having completed successfully:
     instdir_abs.joinpath('.dgcode_dependencies_installation_done').touch()
     emit_final_msg(instdir)
+
+    sys.exit(0)
 
 def emit_final_msg(instdir,extras_installed=None):
     if extras_installed is None:
