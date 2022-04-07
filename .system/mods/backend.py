@@ -39,13 +39,14 @@ def perform_configuration(cmakeargs=[],
                                 load_all=load_all_pkgs)
 
 
+    volatile_misc = ['DGCODE_PROJECTS_DIR', 'DGCODE_INSTALL_DIR_RESOLVED','DGCODE_BUILD_DIR_RESOLVED', 'DGCODE_PKG_PATH', 'DGCODE_ENABLE_PROJECTS_PKG_SELECTION_FLAG'] 
+
     #Inspect environment via cmake (caching the result of previous runs).
 
     def current_reconf_environment(envdict):
         from distutils.spawn import find_executable#similar to shell "which"
-        volatileEnvVars = ['DGCODE_PKG_PATH', 'DGCODE_INSTALL_DIR', 'DGCODE_PROJECTS_DIR', 'DGCODE_ENABLE_PROJECTS_PKG_SELECTION_FLAG'] 
         return (dict( (b,find_executable(b)) for b in set(envdict['autoreconf']['bin_list'].split(';'))),
-                dict( (e,os.getenv(e)) for e in set([*envdict['autoreconf']['env_list'].split(';'),*volatileEnvVars]))) 
+                dict( (e,os.getenv(e)) for e in set([*envdict['autoreconf']['env_list'].split(';'),*volatile_misc]))) 
 
     assert dirs.blddir.exists()
     assert dirs.blddir_indicator.exists()
@@ -86,6 +87,7 @@ def perform_configuration(cmakeargs=[],
         assert not '_autoreconf_environment' in envdict
         envdict['_autoreconf_environment']=current_reconf_environment(envdict)
         envdict['_pyversion'] = pyversionstr
+        envdict['system']['volatile'].update({ 'misc': {**dict((e,os.getenv(e)) for e in volatile_misc)} })
         utils.pkl_dump(envdict,dirs.envcache)
         #configuration fully extracted:
         env.env=envdict
@@ -93,6 +95,7 @@ def perform_configuration(cmakeargs=[],
         import create_setup_file
         create_setup_file.recreate()
         #(re)create any libs_to_symlink whenever extracting env via cmake:
+        dirs.create_install_dir()
         linkdir=dirs.installdir / 'lib' / 'links'
         utils.rm_rf(linkdir)
         utils.mkdir_p(linkdir)
@@ -113,7 +116,7 @@ def perform_configuration(cmakeargs=[],
     #utils.mkdir_p(os.path.join(dirs.blddir,'extdeps'))
     utils.mkdir_p(dirs.blddir / 'extdeps')
     for extdep,info in envdict['extdeps'].items():
-        utils.update_pkl_if_changed(info,os.path.join(dirs.blddir,'extdeps',extdep))
+        utils.update_pkl_if_changed(info,dirs.blddir / 'extdeps' / extdep)
 
     utils.mkdir_p(dirs.blddir / 'langs')
     for lang,info in envdict['system']['langs'].items():

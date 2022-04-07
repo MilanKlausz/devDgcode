@@ -12,7 +12,6 @@ def recreate():
     if extra_binpath: extra_binpath+=":"
     if extra_libpath: extra_libpath+=":"
 
-    dirs.create_install_dir()
     t="""#!/bin/bash
 
 ###############################################################################################################

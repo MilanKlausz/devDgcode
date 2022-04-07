@@ -77,19 +77,23 @@ def projects_dir():
 def pkg_search_path(system_dir):
   dirs=[framework_dir(system_dir),projects_dir()]
   pkg_path_env = os.environ.get('DGCODE_PKG_PATH', None)
-  if(pkg_path_env):
+  if pkg_path_env:
     dirs.extend([Path(p.strip()).resolve() for p in pkg_path_env.split(':') if p.strip()])
   return dirs
 
 def build_dir():
-    build_dir = os.environ.get('DGCODE_BUILD_DIR', Path(projects_dir()) / '.bld') #defaults to the 'projects_dir/.bld' if unset
+    build_dir = os.environ.get('DGCODE_BUILD_DIR_RESOLVED', None)
+    if not build_dir:
+      raise SystemExit('ERROR: The DGCODE_BUILD_DIR_RESOLVED environment variable is not set. Please source the bootstrap.sh file in the Projects directory once again!')
     build_dir_real = Path(build_dir).resolve()
     if not build_dir_real.is_absolute():
       raise SystemExit('ERROR: The DGCODE_BUILD_DIR environment variable must hold an absolute path.')
     return build_dir_real
 
 def install_dir():
-    install_dir = os.environ.get('DGCODE_INSTALL_DIR', Path(projects_dir()) / 'install') #defaults to the 'projects_dir/install' if unset
+    install_dir = os.environ.get('DGCODE_INSTALL_DIR_RESOLVED', None)     
+    if not install_dir:
+      raise SystemExit('ERROR: The DGCODE_INSTALL_DIR_RESOLVED environment variable is not set. Please source the bootstrap.sh file in the Projects directory once again!')
     install_dir_real = Path(install_dir).resolve()
     if not install_dir_real.is_absolute():
       raise SystemExit('ERROR: The DGCODE_INSTALL_DIR environment variable must hold an absolute path.')

@@ -168,7 +168,7 @@ def update_pkl_if_changed(pklcont,filename):
         if oldcont==pklcont:
             changed=False
     if old and changed:
-        os.rename(filename,filename+'.old')
+        os.rename(filename,str(filename)+'.old')
     if changed:
         pkl_dump(pklcont,filename)
 

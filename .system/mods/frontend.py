@@ -34,7 +34,7 @@ rel_blddir=os.path.relpath(dirs.blddir)
 rel_instdir=os.path.relpath(dirs.installdir)
 rel_testdir=os.path.relpath(dirs.testdir)
 
-if not any([os.path.realpath(os.getcwd()).startswith(str(d)) for d in [dirs.fmwkdir.parent.parent, dirs.pkgsearchpath]]):
+if not any([os.path.realpath(os.getcwd()).startswith(str(d)) for d in [dirs.fmwkdir.parent.parent, *dirs.pkgsearchpath]]):
     utils.err(['This instance of %s is associated with'%progname,'',
                '      dgcode dir:  %s'%dirs.fmwkdir.parent.parent,
                '      package search path: %s'%str(dirs.pkgsearchpath[0]),
@@ -361,6 +361,12 @@ if not opt.insist and oldsysts!=systs:
     if oldsysts[0]!=systs[0]: opt.examine = True
     if oldsysts[1]!=systs[1]: opt.insist = True
 
+if dirs.envcache.exists():
+  envdict=utils.pkl_load(dirs.envcache)
+  #insist rebuilding from scratch if install dir was changed since the build dir was last used
+  if not envdict['system']['volatile']['misc']['DGCODE_INSTALL_DIR_RESOLVED'] == str(dirs.installdir):
+    opt.insist = True
+
 if opt.insist:
   if check_install_dir_indicator(dirs.installdir):
     utils.rm_rf(dirs.installdir)
@@ -619,7 +625,6 @@ if not opt.njobs:
 if opt.verbose: extramakeopts=' VERBOSE=1'
 elif opt.quiet: extramakeopts=' VERBOSE=-1'
 else: extramakeopts=''
-
 if not opt.quiet:
     print (prefix+"Configuration completed => Launching build with %i parallel processes"%opt.njobs)
 ec=utils.system("cd %s && make --warn-undefined-variables -f Makefile -j%i%s"%(dirs.makefiledir,opt.njobs,extramakeopts))
@@ -633,6 +638,7 @@ if not opt.quiet:
     print ('%sSuccessfully built and installed all enabled packages!'%prefix)
     print (prefix)
     print ('%sSummary:'%prefix)
+    print (prefix+'  Framework directory              : %s'%dirs.fmwkdir)
     print (prefix+'  Projects directory               : %s'%dirs.projdir)
     print (prefix+'  Installation directory           : %s'%dirs.installdir)
     print (prefix+'  Build directory                  : %s'%dirs.blddir)
