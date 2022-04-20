@@ -6,8 +6,8 @@ if [ "x$DGCODE_USEPY2" == "x1" ]; then
     return 1
 fi
 
-if [[ -z "${DGCODE_PROJECT_DIR}" ]]; then
-  echo "ERROR: The DGCODE_PROJECT_DIR variable must be set before sourcing bootstrap.sh"
+if [[ -z "${DGCODE_PROJECTS_DIR}" ]]; then
+  echo "ERROR: The DGCODE_PROJECTS_DIR variable must be set before sourcing bootstrap.sh"
   return 1
 fi
 
@@ -223,14 +223,28 @@ fi
 
 export DGCODE_DIR
 
+
+#Resolve the location of the install and build directories. 
+#Both default to the DGCODE_PROJECTS_DIR, but can be overridden by user
+#specified DGCODE_INSTALL_DIR and DGCODE_BUILD_DIR, unless they're set to 'auto'
+DGCODE_INSTALL_DIR_RESOLVED=$DGCODE_PROJECTS_DIR/install
+if [[ -n "${DGCODE_INSTALL_DIR}" ]] && [ "$DGCODE_INSTALL_DIR" != "auto" ]; then
+  DGCODE_INSTALL_DIR_RESOLVED=$DGCODE_INSTALL_DIR
+fi
+export DGCODE_INSTALL_DIR_RESOLVED
+
+DGCODE_BUILD_DIR_RESOLVED=$DGCODE_PROJECTS_DIR/.bld
+if [[ -n "${DGCODE_BUILD_DIR}" ]] && [ "$DGCODE_BUILD_DIR" != "auto" ]; then
+  DGCODE_BUILD_DIR_RESOLVED=$DGCODE_BUILD_DIR
+fi
+export DGCODE_BUILD_DIR_RESOLVED
+
+
 #Provide dgbuild and dgrun functions. Make sure the installation area's setup
 #script is automatically sourced after each dgbuild invocation:
 
-DGCODE_INSTALL_DIR="${DGCODE_INSTALL_DIR:-$DGCODE_PROJECT_DIR/install}"
-export DGCODE_INSTALL_DIR
-
 function dgbuild() {
-    python3 $DGCODE_DIR/.system/bin/dgbuild "$@" ; dgec=$?; if [ -f $DGCODE_INSTALL_DIR/setup.sh ]; then source $DGCODE_INSTALL_DIR/setup.sh; fi; return $dgec
+    python3 $DGCODE_DIR/.system/bin/dgbuild "$@" ; dgec=$?; if [ -f $DGCODE_INSTALL_DIR_RESOLVED/setup.sh ]; then source $DGCODE_INSTALL_DIR_RESOLVED/setup.sh; fi; return $dgec
 }
 
 function dgrun() {
@@ -254,8 +268,8 @@ function dgrun() {
     source $DGCODE_DIR/install/setup.sh && $prog "$@"
 }
 
-if [ -f "$DGCODE_INSTALL_DIR/setup.sh" ]; then
-    source "$DGCODE_INSTALL_DIR/setup.sh"
+if [ -f "$DGCODE_INSTALL_DIR_RESOLVED/setup.sh" ]; then
+    source "$DGCODE_INSTALL_DIR_RESOLVED/setup.sh"
 fi
 
 if [ "x$DGCODE_BOOTSTRAP_QUIET" != "x1" ]; then
