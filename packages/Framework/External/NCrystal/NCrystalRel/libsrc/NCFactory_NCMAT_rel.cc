@@ -2,7 +2,7 @@
 //                                                                            //
 //  This file is part of NCrystal (see https://mctools.github.io/ncrystal/)   //
 //                                                                            //
-//  Copyright 2015-2021 NCrystal developers                                   //
+//  Copyright 2015-2022 NCrystal developers                                   //
 //                                                                            //
 //  Licensed under the Apache License, Version 2.0 (the "License");           //
 //  you may not use this file except in compliance with the License.          //
@@ -21,7 +21,6 @@
 #include "NCrystalRel/NCFactImpl.hh"
 #include "NCrystalRel/NCDataSources.hh"
 #include "NCrystalRel/NCLoadNCMAT.hh"
-
 namespace NC = NCrystalRel;
 
 namespace NCrystalRel {
@@ -30,14 +29,14 @@ namespace NCrystalRel {
   public:
     const char * name() const noexcept final { return "stdncmat"; }
 
-    Priority query( const MatInfoCfg& cfg ) const final
+    Priority query( const FactImpl::InfoRequest& cfg ) const final
     {
       return cfg.getDataType()=="ncmat" ? Priority{100} : Priority{Priority::Unable};
     }
 
-    shared_obj<const Info> produce( const MatInfoCfg& cfg ) const final
+    shared_obj<const Info> produce( const FactImpl::InfoRequest& cfg ) const final
     {
-      return NC::makeSO<const Info>( loadNCMAT(cfg) );
+      return makeSO<const Info>( loadNCMAT(cfg) );
     }
   };
 
@@ -47,7 +46,7 @@ namespace NCrystalRel {
 //this function is forward declared elsewhere or might be dynamically invoked
 //(hence the C-mangling), and its name should not be changed just here:
 
-extern "C" void ncrystalrel_register_ncmat_factory()
+extern "C" void ncrystalrel_register_stdncmat_factory()
 {
   NC::FactImpl::registerFactory( std::make_unique<NC::NCMATFactory>(),
                                  NC::FactImpl::RegPolicy::IGNORE_IF_EXISTS );

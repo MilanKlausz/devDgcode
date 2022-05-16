@@ -27,4 +27,5 @@ def standardMPLFixes():
     disableFPEDuringCall(matplotlib.figure.Figure,'savefig')
     disableFPEDuringCall(matplotlib.pyplot,'show')
     disableFPEDuringCall(matplotlib.pyplot,'savefig')
-    disableFPEDuringCall(matplotlib.scale.LogTransformBase,'transform_non_affine')
+    if hasattr(matplotlib.scale,'LogTransformBase'):
+        disableFPEDuringCall(matplotlib.scale.LogTransformBase,'transform_non_affine')

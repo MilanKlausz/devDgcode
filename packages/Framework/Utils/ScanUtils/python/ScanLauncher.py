@@ -5,7 +5,7 @@ import sys,os
 import Core.System
 quote=Core.System.quote
 import G4Utils.hash2seed
-import dgbuild.cfg as cfg
+
 
 def _joinargs(args):
     return ' '.join(quote(str(a)) for a in args)
@@ -160,8 +160,7 @@ class ScanLauncher:
                 print('WARNING: The feature preventing future developments from interfering with running jobs is in maintenance,'
                    +'\n         therefore you are not supposed to alter the application while the scan script is running!')
                 print("SKIPPED: Invoking dgbuild and installing to %s"%instdir)
-                #instdir=os.environ.get('ESS_INSTALL_PREFIX', None) 
-                instdir=cfg.dirs.installdir
+                instdir=os.environ.get('ESS_INSTALL_PREFIX', None) 
                 setupsh=os.path.join(instdir,'setup.sh')
                 if not ec==0:
                     print("ERROR: Build or installation failed")
