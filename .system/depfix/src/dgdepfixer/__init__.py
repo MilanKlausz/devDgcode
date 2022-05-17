@@ -24,4 +24,6 @@ if sys.version_info[0:2]<(3,7):
     #Possibly the same issue for other components (saw latest version missing on python 3.6):
     swversions['pymod:pandas']['recommended']='1.1.5'
     swversions['pymod:scipy']['recommended']='1.5.4'
+    #Latest versions of matplotlib compatible with Python 3.6
+    swversions['pymod:matplotlib']['recommended']='3.3.4'  
 
