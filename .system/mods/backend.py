@@ -331,7 +331,7 @@ def perform_configuration(cmakeargs=[],
     }
     dirdict = { key: os.environ.get(value) for (key, value) in dir_env_vars.items() if os.environ.get(value, None)}
 
-    dir_names = ('sysdir','fmwkdir','projdir','pkgsearchpath','blddir','installdir','testdir')
+    dir_names = ('sysdir','fmwkdir','projdir','pkgsearchpath','blddir','installdir','testdir','envcache')
     dirdict.update(dict(((d, getattr(dirs, d)) for d in dir_names)))
 
     #Update dynamic python module with information, if needed:
