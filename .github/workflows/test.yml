@@ -12,3 +12,4 @@ jobs:
     needs: call-workflow
     steps:
       - run: echo ${{ needs.call-workflow.outputs.run_id }}
+      - run: echo ${{ needs.call-workflow.outputs }}
