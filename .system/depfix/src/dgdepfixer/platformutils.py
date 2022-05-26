@@ -239,7 +239,11 @@ def base_check(do_git=True,do_pipvenv=True,do_py3dev=True):
     #Now make sure that ~/.bashrc is always sourced somehow
     has_bashrc = AbsPath('~/.bashrc').exists()
 
-    candidates = [n for n in list(AbsPath(m) for m in ('~/.bash_profile','~/.bash_login','~/.profile')) if n.exists()]
+    profile_files = ('~/.bash_profile','~/.bash_login','~/.profile')
+    if os.environ.get('GITHUB_SERVER_URL',''): #Special handling to avoid errors with GitHub Runners (CI)
+      profile_files = ('~/.bash_profile')
+
+    candidates = [n for n in list(AbsPath(m) for m in profile_files) if n.exists()]
     if not candidates and has_bashrc:
         errprint('You appear to be running BASH with a ~/.bashrc file, but no profile file is sourcing it.')
         errprint('\nTherefore it will not always be sourced in your terminal sessions.')
