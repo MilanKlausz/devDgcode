@@ -239,43 +239,42 @@ def base_check(do_git=True,do_pipvenv=True,do_py3dev=True):
     #Now make sure that ~/.bashrc is always sourced somehow
     has_bashrc = AbsPath('~/.bashrc').exists()
 
-    profile_files = ('~/.bash_profile','~/.bash_login','~/.profile')
-    if os.environ.get('GITHUB_SERVER_URL',''): #Special handling to avoid errors with GitHub Runners (CI)
-      profile_files = ('~/.bash_profile')
-
-    candidates = [n for n in list(AbsPath(m) for m in profile_files) if n.exists()]
-    if not candidates and has_bashrc:
-        errprint('You appear to be running BASH with a ~/.bashrc file, but no profile file is sourcing it.')
-        errprint('\nTherefore it will not always be sourced in your terminal sessions.')
-        errprint('\nYou can fix this by running the following command:\n')
-        errprint("     echo 'if [ -f $HOME/.bashrc ]; then . $HOME/.bashrc; fi' >> $HOME/.bash_profile")
-        errprint('\nOf course you should first check that the ~/.bashrc file does not contain anything harmful! (You should check that anyway!)')
-        raise SystemExit(1)
-    if len(candidates)>1:
-        errprint('You appear to be running BASH with several profile files present: %s'%(' '.join(str(c) for c in candidates)))
-        errprint('Only the %s file is actually used in this case and the other ones are ignored.'%candidates[0])
-        errprint('To avoid confusion, you should remove the unused ones. For instance by running:\n')
-        for c in candidates[1:]:
-            errprint('    mv %s %s_DISABLED'%(c,c))
-        errprint()
-        raise SystemExit(1)
-    if not candidates and not has_bashrc:
-        errprint('You appear to be running BASH with no profile files and no ~/.bashrc file.')
-        errprint('\nYou should create them by running the following command:\n')
-        errprint("     echo 'if [ -f $HOME/.bashrc ]; then . $HOME/.bashrc; fi' >> $HOME/.bash_profile && touch $HOME/.bashrc")
-        raise SystemExit(1)
-    assert len(candidates)==1
-    proffile = candidates[0]
-    if not has_bashrc:
-        errprint('You appear to be running BASH with no ~/.bashrc file. You should create one by running:')
-        errprint("\n     touch $HOME/.bashrc")
-        raise SystemExit(1)
-    if not any('.bashrc' in l.split('#')[0] for l in proffile.read_text().splitlines()):
-        errprint('You appear to be running BASH with a ~/.bashrc file, but your profile file (%s) does not source it!'%proffile)
-        errprint('You can fix this by running the following command:\n')
-        errprint("     echo 'if [ -f $HOME/.bashrc ]; then . $HOME/.bashrc; fi' >> %s"%proffile)
-        errprint('\nOf course you should first check that the ~/.bashrc file does not contain anything harmful! (You should check that anyway!)')
-        raise SystemExit(1)
+    if os.environ.get('GITHUB_SERVER_URL',''): #Ignore when using GitHub Runners (CI)
+      print('GitHub Runner environment detected. Skipping bash profile file checking.')
+    else:
+      candidates = [n for n in list(AbsPath(m) for m in ('~/.bash_profile','~/.bash_login','~/.profile')) if n.exists()]
+      if not candidates and has_bashrc:
+          errprint('You appear to be running BASH with a ~/.bashrc file, but no profile file is sourcing it.')
+          errprint('\nTherefore it will not always be sourced in your terminal sessions.')
+          errprint('\nYou can fix this by running the following command:\n')
+          errprint("     echo 'if [ -f $HOME/.bashrc ]; then . $HOME/.bashrc; fi' >> $HOME/.bash_profile")
+          errprint('\nOf course you should first check that the ~/.bashrc file does not contain anything harmful! (You should check that anyway!)')
+          raise SystemExit(1)
+      if len(candidates)>1:
+          errprint('You appear to be running BASH with several profile files present: %s'%(' '.join(str(c) for c in candidates)))
+          errprint('Only the %s file is actually used in this case and the other ones are ignored.'%candidates[0])
+          errprint('To avoid confusion, you should remove the unused ones. For instance by running:\n')
+          for c in candidates[1:]:
+              errprint('    mv %s %s_DISABLED'%(c,c))
+          errprint()
+          raise SystemExit(1)
+      if not candidates and not has_bashrc:
+          errprint('You appear to be running BASH with no profile files and no ~/.bashrc file.')
+          errprint('\nYou should create them by running the following command:\n')
+          errprint("     echo 'if [ -f $HOME/.bashrc ]; then . $HOME/.bashrc; fi' >> $HOME/.bash_profile && touch $HOME/.bashrc")
+          raise SystemExit(1)
+      assert len(candidates)==1
+      proffile = candidates[0]
+      if not has_bashrc:
+          errprint('You appear to be running BASH with no ~/.bashrc file. You should create one by running:')
+          errprint("\n     touch $HOME/.bashrc")
+          raise SystemExit(1)
+      if not any('.bashrc' in l.split('#')[0] for l in proffile.read_text().splitlines()):
+          errprint('You appear to be running BASH with a ~/.bashrc file, but your profile file (%s) does not source it!'%proffile)
+          errprint('You can fix this by running the following command:\n')
+          errprint("     echo 'if [ -f $HOME/.bashrc ]; then . $HOME/.bashrc; fi' >> %s"%proffile)
+          errprint('\nOf course you should first check that the ~/.bashrc file does not contain anything harmful! (You should check that anyway!)')
+          raise SystemExit(1)
 
     osx_rel = osx_release()
     catalina_or_later =  osx_rel is not None and osx_rel[0:2]>=(10,15)
