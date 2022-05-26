@@ -39,6 +39,9 @@ def get_load(ncores,prefix):
     if p>ncores*1.5:
         print(prefix+'Warning: Could not determine current CPU load ("ps -eo pcpu" output was suspicous). Assuming 0%.')
         return 0.0
+    from os import environ as env
+    if env.get('GITHUB_SERVER_URL',''): #Ignore CPU load for better performance when using GitHub Runners (CI)
+      return 0.0
     return p
 
 def auto_njobs(prefix):
