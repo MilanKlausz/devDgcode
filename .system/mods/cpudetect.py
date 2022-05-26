@@ -50,6 +50,4 @@ def auto_njobs(prefix):
         return n_reserved
     nc=get_n_cores(prefix)
     freecores=nc-get_load(nc,prefix)
-    print("DEBUG GITHUB CI: Number of CPU cores:", nc)
-    print("DEBUG GITHUB CI: Number of freecores:", freecores)
     return max(1,int(0.5+0.98*freecores))
