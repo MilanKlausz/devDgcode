@@ -181,6 +181,9 @@ def base_check(do_git=True,do_pipvenv=True,do_py3dev=True):
     scope of the present script to fix relating to python3 version+headers, C++
     compiler, BASH, git. Prints messages to stderr and raise SystemExit."""
 
+    if os.environ.get('GITHUB_SERVER_URL',''): #Ignore git config when using GitHub Runners (CI)
+      do_git=False
+
     #############################
     ### Sanity check DGDEPDIR ###
     #############################
