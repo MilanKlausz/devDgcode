@@ -248,7 +248,7 @@ def parse_args():
     if query_mode_withpathzoom_n > 0:
         for a in args_unused:
             qp=os.path.abspath(os.path.realpath(a))
-            if not any([qp.startswith(d) for d in dirs.pkgsearchpath]):
+            if not any([qp.startswith(str(d)) for d in dirs.pkgsearchpath]):
                 parser.error("grep/find/replace/... can only work on directories below %s"%dirs.pkgsearchpath) #TODO ' '.join(pkgsearchpath) might look nicer
             gps=[d for d in glob.glob(qp) if os.path.isdir(d)]
             if not gps:

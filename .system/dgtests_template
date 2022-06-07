@@ -130,7 +130,7 @@ def perform_tests(testdir,installdir,njobs,prefix,nexcerpts,filters):
             def readsafe(fn):
                 with open(fn,'rb') as fh:
                     s = fh.read().decode('utf-8','backslashreplace')
-                return s if len(s)<11000 else (s[0:10000]+"\n<<<output exceeds limit for inclusion here>>>")
+                return s if len(s)<11000 else (s[0:5000]+"\n<<<skipping to the ending>>>\n"+ s[-5000:] +"\n<<<output exceeds limit for inclusion here>>>")
             if nfo['exitcode'] != 0:
                 tc.add_failure_info("Execution failed",readsafe(nfo['logfile']) or "<command gave no output>")
             elif not nfo['logdiffok']:
