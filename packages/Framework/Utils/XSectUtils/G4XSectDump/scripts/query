@@ -20,7 +20,7 @@ parser.add_option("-m",'--material',type='string',default='',dest="matname",
                   help='Material given by NamedMaterialProvider syntax')
 parser.add_option("-s", "--noshow", action='store_false',default=True,dest="show",
                   help='Don\'t show extracted cross-sections in interactive plots')
-parser.add_option("-f", "--nofile", action='store_true',default=True,dest="savefig",
+parser.add_option("-f", "--nofile", action='store_false',default=True,dest="savefig",
                   help='Don\'t save plots of extracted cross-sections in PDF files')
 parser.add_option("-w", "--wavelengths", action='store_true',default=False,dest="wavelength",
                   help='Show plots versus neutron wavelength rather than energy')
