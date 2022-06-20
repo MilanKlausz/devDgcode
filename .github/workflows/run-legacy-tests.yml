@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  validations:
+  legacyProjects:
     uses: MilanKlausz/testActions/.github/workflows/dev_runLegacyProjectsTests.yml@main
-      secrets:
-        LEGACY_REPO_URL: ${{ secrets.LEGACY_REPO_URL }}
-        LEGACY_REPO_PAT: ${{ secrets.LEGACY_REPO_PAT }}
+    secrets:
+      LEGACY_REPO_URL: ${{ secrets.LEGACY_REPO_URL }}
+      LEGACY_REPO_PAT: ${{ secrets.LEGACY_REPO_PAT }}
   
