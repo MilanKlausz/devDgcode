@@ -8,6 +8,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  validations:
     uses: MilanKlausz/testActions/.github/workflows/dev_runValidationTests.yml@main
+
+  userTests:
+    uses: MilanKlausz/testActions/.github/workflows/dev_runUserTests.yml@main
   
