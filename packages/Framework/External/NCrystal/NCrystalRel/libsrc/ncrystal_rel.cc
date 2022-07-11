@@ -37,6 +37,7 @@
 #include "NCrystalRel/internal_NCEqRefl.hh"//TODO: might not be needed eventually
 #include "NCrystalRel/internal_NCAtomDB.hh"
 #include "NCrystalRel/internal_NCVDOSEval.hh"
+#include "NCrystalRel/NCParseNCMAT.hh"
 #include <cstdio>
 #include <cstdlib>
 
@@ -1954,6 +1955,20 @@ char * ncrystalrel_gencfgstr_doc(int mode)
       NCRYSTAL_THROW2(BadInput,"Invalid mode " << mode
                       << " passed to ncrystalrel_gencfgstr_doc (must be 0, 1, or 2)");
     };
+    return ncc::createString(ss.str());
+  } NCCATCH;
+  return nullptr;
+}
+
+NCRYSTAL_API char * ncrystalrel_ncmat2json( const char * textdataname )
+{
+  try {
+    auto textData = NC::FactImpl::createTextData( textdataname );
+    auto data_mut = NC::parseNCMATData( textData,
+                                        true /*doFinalValidation*/ );
+    const auto& data = data_mut;
+    std::ostringstream ss;
+    data.toJSON(ss);
     return ncc::createString(ss.str());
   } NCCATCH;
   return nullptr;
