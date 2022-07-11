@@ -1,7 +1,4 @@
 
-from pprint import pprint
-
-
 def perform_configuration(cmakeargs=[],
                           select_filter=None,
                           exclude_filter=None,
@@ -25,7 +22,6 @@ def perform_configuration(cmakeargs=[],
     import dynpkg
     import mtime
     import pickle
-
     #Possible external dependencies (based solely on files in ExtDep directory):
 
     possible_extdeps = set(os.path.basename(f)[7:-6] for f in glob.glob(os.path.join(dirs.cmakedetectdir,'optional/ExtDep_*.cmake')))
@@ -355,11 +351,11 @@ class Dirs:
     content+="""
 dirs = Dirs()
 if __name__=="__main__":
-  import pprint
-  pprint.pprint(pkgs) 
+  import pprint as pp
+  pp.pprint(pkgs) 
   pp.pprint({ p:getattr(dirs,p) for p in dir(dirs) if not p.startswith('_')})
 """ 
-    #TODO: Don't always just overwrite the config file (the pickled state is 
+    #TODO: Don't always just overwrite the config file (the pickled state is
     #indeterministic, so can't quickly tell from the serialised data if anything
     #changed or not):
     with open(cfgfile,'wt') as f:

@@ -20,7 +20,7 @@ _safe_git_cmd = '/usr/bin/env GIT_CONFIG=/dev/null GIT_OPTIONAL_LOCKS=0 git'.spl
 _safe_git_cmd_keepcfg = '/usr/bin/env GIT_OPTIONAL_LOCKS=0 git'.split()
 
 #Duplicated from .githooks/hooks.py:
-def git_status_iter(extra_args=[],staged_only=True,status_filter=''):
+def git_status_iter(extra_args=[],staged_only=False,status_filter=''):
     #We set GIT_CONFIG=/dev/null to avoid user/system cfg messing with the
     #result. We also set GIT_OPTIONAL_LOCKS=0 instead of using
     #--no-optional-locks, since the functionality is not available in all git

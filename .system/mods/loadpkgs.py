@@ -1,6 +1,5 @@
 from __future__ import print_function
 from __future__ import division
-
 __metaclass__ = type#py2 backwards compatibility
 import os,sys,dirs
 import utils,langs,conf,error

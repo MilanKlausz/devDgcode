@@ -4,11 +4,6 @@ import pickle
 import Core.System as Sys
 op=os.path
 
-_dgcode_dir=os.path.abspath(os.path.realpath(os.environ.get('DGCODE_DIR')))
-if not os.path.isdir(_dgcode_dir):
-    raise RuntimeError('DGCODE_DIR not found')
-
-
 class stdinstaller:
     #methods to override for a specific installation project:
     def name(self): raise NotImplementedError
@@ -29,24 +24,6 @@ class stdinstaller:
     def unsetup_file_contents(self,instdir): raise NotImplementedError
     def dbg_flags(self): raise NotImplementedError
     def hide_flags(self): return []
-    #helper method for extracting dgcodes env.cache dict:
-    def _get_dgbuild_envcache(self):
-        envcache_file=os.path.join(_dgcode_dir,'.bld/env.cache')
-        if not os.path.exists(envcache_file):
-            raise RuntimeError('env.cache file not found. Rerun dgbuild first?')
-        return pickle.load(open(envcache_file,'rb'))
-    #helper methods for constructing cmake flags pointing at the python installation dgcode is using:
-    def _get_common_cmake_pyflags(self):
-        env=self._get_dgbuild_envcache()
-        pyincdirs=env['system']['general']['pythonincdirs'].split()
-        pylibs=env['system']['general']['pythonlibs'].split()
-        if len(pyincdirs)>1:
-            raise RuntimeError("Multiple python include dirs not supported")
-        if len(pylibs)>1:
-            raise RuntimeError("Multiple python libraries not supported")
-        f1= ['-DPYTHON_LIBRARY=%s'%Sys.quote(pylibs[0])] if pylibs else []
-        f2=['-DPYTHON_INCLUDE_DIR=%s'%Sys.quote(pyincdirs[0])] if pyincdirs else []
-        return f1+f2
 
     #helper methods which can be used in derived classes when composing flags for the configuration command:
     def _prune_duplicate_flags(self,flags):
@@ -162,11 +139,6 @@ class stdinstaller:
                 parser.error("Not a directory: %s"%op.dirname(opt.tmpworkdir))
         if ' ' in opt.instdir:
             parser.error('Destination directory path should not contain spaces')
-        dgcode_dir=os.getenv('DGCODE_DIR')
-        if dgcode_dir:
-            dgcode_dir=op.abspath(op.realpath(dgcode_dir))
-            if op.abspath(op.realpath(opt.instdir)).startswith(dgcode_dir):
-                parser.error('You should choose an installation directory outside dgcode')
         self.get_parser_options(opt)
         return opt,cfgargs
 

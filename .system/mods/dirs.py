@@ -2,7 +2,6 @@
 from os import path
 join=path.join
 import conf#project specific configuration
-from pathlib import Path
 
 #system dir is one up from the modules dir:
 sysdir = path.realpath(join(path.dirname(__file__),'..'))
@@ -29,8 +28,6 @@ varcache = blddir / 'vars.cache' #dynamic user settings (for pkg filters and cma
 systimestamp_cache=blddir / 'systimestamp.cache'
 setupfile_cache=blddir / 'setup.sh'
 lockfile=blddir / ".lock"
-
-pathdict = dict(((d, eval(d)) for d in ('sysdir','fmwkdir','projdir','pkgsearchpath','blddir','installdir','testdir')))
 
 def makefile_instdir(*subpaths):
     if not subpaths:
@@ -63,8 +60,8 @@ def pkg_dir(pkg,*subpaths): return join(pkgdirbase,_pkgname(pkg),*subpaths)
 def makefile_pkg_dir(pkg,*subpaths): return join('${PKG}',_pkgname(pkg),*subpaths)
 
 #sanity:
-#for d in [sysdir,blddir,*codedirs,installdir]:
-#    assert not ' ' in d, 'Spaces not allowed in directory names. Error with "%s"'%d 
+for d in [str(x) for x in [sysdir, blddir, *pkgsearchpath, installdir]]:
+    assert not ' ' in d, 'Spaces not allowed in directory names. Error with "%s"'%d 
 
 # Package directory aliases #keep them lowercase
 pkgdir_aliases = {
