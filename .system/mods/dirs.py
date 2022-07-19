@@ -7,7 +7,6 @@ import conf#project specific configuration
 sysdir = path.realpath(join(path.dirname(__file__),'..'))
 #sysdir = Path(__file__).resolve().parent
 fmwkdir = conf.framework_dir(sysdir)
-valdir = conf.validation_dir(sysdir)
 blddir = conf.build_dir()
 blddir_indicator = conf.build_dir_indicator(blddir)
 makefiledir = blddir / 'makefiles'
@@ -66,7 +65,6 @@ for d in [str(x) for x in [sysdir, blddir, *pkgsearchpath, installdir]]:
 # Package directory aliases #keep them lowercase
 pkgdir_aliases = {
   "framework": fmwkdir,
-  "validation": valdir,
   "projects": projdir
   }
 

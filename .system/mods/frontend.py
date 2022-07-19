@@ -99,8 +99,7 @@ def parse_args():
                              action='store', dest="project", default='',metavar='PROJ',
                              help='Enable packages in selected projects (under packages/ '
                              ' or folders defined by the DGCODE_PKG_PATH environment variable).'
-                             ' The selection can use wildcards and comma separation. The special'
-                             ' project name "val" can be used to enable Validation/')
+                             ' The selection can use wildcards and comma separation.')
 #    group_pkgselect.add_option("-k","--pkg",
 #                             action='store', dest="pkgs", default='',metavar='PKG',
 #                             help='Enable these packages in addition to those selected by'

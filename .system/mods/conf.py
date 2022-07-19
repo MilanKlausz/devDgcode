@@ -105,9 +105,6 @@ def test_dir():
 def framework_dir(system_dir):
   return (Path(system_dir) / '../packages/Framework').resolve()
 
-def validation_dir(system_dir):
-  return (Path(system_dir) / '../packages/Validation').resolve()
-
 # directory indicators - empty files to indicate the build/install directory, to be checked before using rm -rf on it
 def build_dir_indicator(bld_dir):
   return Path(bld_dir) / '.dgbuilddir'
